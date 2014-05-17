@@ -452,6 +452,25 @@
       `() ()    ; was NPE before SVN r1337
   ))
 
+(deftest t-Unquote-splicing-map
+  (are [x y] (= (eval (read-string x)) y)
+       "`{~@[1 2]}" {1 2}
+       "`{:foo ~@[:bar :baz] {:quux ~(second [1 2 3])}}" {:foo :bar, :baz {:quux 2}}))
+
+(deftest t-Syntax-quote-metadata
+  (is (= (meta (eval (read-string "`^{~@[:foo :bar]} sym")))
+	 {:foo :bar}))
+  ; non-map metadata literals are still invalid
+  (are [expr-str]
+    (let [ex (atom nil)]
+      (try (read-string expr-str)
+	   (catch RuntimeException e
+	     (reset! ex e)))
+      (some? @ex))
+    "`^(:foo :bar) foo"
+    "`^[:foo :bar] foo"
+    "`^#{:foo :bar} foo"))
+
 ;; (read)
 ;; (read stream)
 ;; (read stream eof-is-error)

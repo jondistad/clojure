@@ -54,6 +54,8 @@ static Symbol WITH_META = Symbol.intern("clojure.core", "with-meta");
 static Symbol META = Symbol.intern("clojure.core", "meta");
 static Symbol DEREF = Symbol.intern("clojure.core", "deref");
 static Keyword UNKNOWN = Keyword.intern(null, "unknown");
+static Keyword MAP_ELEMS = Keyword.intern("clojure.core", "map-elems");
+static Keyword MAP_META = Keyword.intern("clojure.core", "map-meta");
 //static Symbol DEREF_BANG = Symbol.intern("clojure.core", "deref!");
 
 static IFn[] macros = new IFn[256];
@@ -76,6 +78,8 @@ static Pattern floatPat = Pattern.compile("([-+]?[0-9]+(\\.[0-9]*)?([eE][-+]?[0-
 static Var GENSYM_ENV = Var.create(null).setDynamic();
 //sorted-map num->gensymbol
 static Var ARG_ENV = Var.create(null).setDynamic();
+// in-syntax-quote?
+static Var IN_SYNTAX_QUOTE = Var.create(null).setDynamic();
 static IFn ctorReader = new CtorReader();
 
 static
@@ -718,8 +722,13 @@ public static class MetaReader extends AFn{
 			meta = RT.map(RT.TAG_KEY, meta);
 		else if (meta instanceof Keyword)
 			meta = RT.map(meta, RT.T);
-		else if(!(meta instanceof IPersistentMap))
-			throw new IllegalArgumentException("Metadata must be Symbol,Keyword,String or Map");
+
+		if(!(meta instanceof IPersistentMap)) {
+			if (IN_SYNTAX_QUOTE.deref() == RT.T && RT.meta(meta) != null && RT.meta(meta).containsKey(MAP_ELEMS))
+				meta = RT.map(MAP_META, meta);
+			else
+				throw new IllegalArgumentException("Metadata must be Symbol,Keyword,String or Map");
+		}
 
 		Object o = read(r, true, null, true);
 		if(o instanceof IMeta)
@@ -752,7 +761,8 @@ public static class SyntaxQuoteReader extends AFn{
 		try
 			{
 			Var.pushThreadBindings(
-					RT.map(GENSYM_ENV, PersistentHashMap.EMPTY));
+					RT.map(GENSYM_ENV, PersistentHashMap.EMPTY,
+					       IN_SYNTAX_QUOTE, RT.T));
 
 			Object form = read(r, true, null, true);
 			return syntaxQuote(form);
@@ -835,6 +845,12 @@ public static class SyntaxQuoteReader extends AFn{
 				ISeq seq = RT.seq(form);
 				if(seq == null)
 					ret = RT.cons(LIST,null);
+				else if (seq instanceof IObj && RT.meta(seq) != null && RT.meta(seq).containsKey(MAP_ELEMS))
+					{
+					IPersistentMap meta = RT.meta(seq).without(MAP_ELEMS);
+					form = ((IObj) seq).withMeta(meta.count()==0 ? null : meta);
+					ret = RT.list(APPLY, HASHMAP, RT.list(SEQ, RT.cons(CONCAT, sqExpandList(seq))));
+					}
 				else
 					ret = RT.list(SEQ, RT.cons(CONCAT, sqExpandList(seq)));
 				}
@@ -851,10 +867,23 @@ public static class SyntaxQuoteReader extends AFn{
 
 		if(form instanceof IObj && RT.meta(form) != null)
 			{
+			IPersistentMap m = ((IObj) form).meta();
+			Object mapMeta = m.valAt(MAP_META);
+			m = m.without(MAP_META);
+			if (mapMeta != null)
+				{
+				IPersistentVector flatMeta = flattenMap(m);
+
+				for(ISeq s = (ISeq)mapMeta; s != null; s = s.next())
+					flatMeta = flatMeta.cons(s.first());
+				IObj mergedMeta = ((IObj)RT.seq(flatMeta)).withMeta(RT.meta(mapMeta));
+				return RT.list(WITH_META, ret, syntaxQuote(mergedMeta));
+				}
+
 			//filter line and column numbers
-			IPersistentMap newMeta = ((IObj) form).meta().without(RT.LINE_KEY).without(RT.COLUMN_KEY);
+			IPersistentMap newMeta = m.without(RT.LINE_KEY).without(RT.COLUMN_KEY);
 			if(newMeta.count() > 0)
-				return RT.list(WITH_META, ret, syntaxQuote(((IObj) form).meta()));
+				return RT.list(WITH_META, ret, syntaxQuote(m));
 			}
 		return ret;
 	}
@@ -897,6 +926,8 @@ static boolean isUnquote(Object form){
 
 static class UnquoteReader extends AFn{
 	public Object invoke(Object reader, Object comma) {
+		try{
+		Var.pushThreadBindings(RT.map(IN_SYNTAX_QUOTE, null));
 		PushbackReader r = (PushbackReader) reader;
 		int ch = read1(r);
 		if(ch == -1)
@@ -912,6 +943,10 @@ static class UnquoteReader extends AFn{
 			Object o = read(r, true, null, true);
 			return RT.list(UNQUOTE, o);
 			}
+		}
+		finally {
+			Var.popThreadBindings();
+		}
 	}
 
 }
@@ -1078,12 +1113,16 @@ public static class VectorReader extends AFn{
 public static class MapReader extends AFn{
 	public Object invoke(Object reader, Object leftparen) {
 		PushbackReader r = (PushbackReader) reader;
-		Object[] a = readDelimitedList('}', r, true).toArray();
+		List mapForms = readDelimitedList('}', r, true);
+		if (!(mapForms.isEmpty()) && IN_SYNTAX_QUOTE.deref() == RT.T) {
+			return ((ASeq)RT.seq(mapForms)).withMeta(RT.map(MAP_ELEMS, RT.T));
+		}
+
+		Object[] a = mapForms.toArray();
 		if((a.length & 1) == 1)
 			throw Util.runtimeException("Map literal must contain an even number of forms");
 		return RT.map(a);
 	}
-
 }
 
 public static class SetReader extends AFn{
