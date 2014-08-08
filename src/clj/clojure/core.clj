@@ -6373,6 +6373,7 @@
 (load "core_print")
 (load "genclass")
 (load "core_deftype")
+(load "core_vector")
 (load "core/protocols")
 (load "gvec")
 (load "instant")
