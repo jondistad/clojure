@@ -419,8 +419,10 @@ static public void load(String scriptbase, boolean failIfNotFound) throws IOExce
 
 	boolean loaded = false;
 
-	if (booleanCast(Compiler.COMPILE_FILES.deref()) && (cljURL != null))
+	if (booleanCast(Compiler.COMPILE_FILES.deref()) && (cljURL != null)) {
 		compile(cljfile);
+		return;
+	}
 
 	if((classURL != null &&
 	    (cljURL == null
