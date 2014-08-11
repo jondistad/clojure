@@ -44,7 +44,7 @@ else
     jar xf "$CLJ_JAR"
     cd -
 
-    java -cp src/clj:"$BUILD_DIR" -Dclojure.compile.path="$BUILD_DIR" clojure.lang.Compile $(echo "$NAMESPACES" | xargs)
+    java -cp src/clj:"$BUILD_DIR" -Dclojure.compile.path="$BUILD_DIR" -Djava.awt.headless=true clojure.lang.Compile $(echo "$NAMESPACES" | xargs)
 fi
 
 
