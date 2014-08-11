@@ -391,7 +391,7 @@ static public long lastModified(URL url, String libfile) throws IOException{
 	}
 }
 
-static void compile(String cljfile) throws IOException{
+public static void compile(String cljfile) throws IOException{
         InputStream ins = resourceAsStream(baseLoader(), cljfile);
 	if(ins != null) {
 		try {
