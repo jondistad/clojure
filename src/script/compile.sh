@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -x
+#set -x
 
 NAMESPACES="
 clojure.core
@@ -30,4 +30,11 @@ clojure.reflect
 clojure.lang
 "
 
-java -cp /Users/jon/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar:src/clj -Dclojure.compile.path=target clojure.lang.Compile $(echo "$NAMESPACES" | xargs)
+BUILD_DIR="$PWD/bootstrap"
+
+rm -rf "$BUILD_DIR"
+mkdir -p "$BUILD_DIR"
+
+java -cp /Users/jon/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar:src/clj -Dclojure.compile.path="$BUILD_DIR" clojure.lang.Compile $(echo "$NAMESPACES" | xargs)
+
+ant compile-java

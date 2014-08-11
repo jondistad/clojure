@@ -15,6 +15,7 @@
   <property name="compile-script" location="${cljscript}/bootstrap_compile.clj"/>
   <property name="target" location="target"/>
   <property name="build" location="${target}/classes"/>
+  <property name="bootstrap" location="bootstrap"/>
   <property name="test-classes" location="${target}/test-classes"/>
   <property name="dist" location="dist"/>
   <property file="maven-classpath.properties"/>
@@ -38,6 +39,7 @@
           description="Compile Java sources.">
     <javac srcdir="${jsrc}" destdir="${build}" includeJavaRuntime="yes"
            includeAntRuntime="false"
+           classpath="${bootstrap}"
            debug="true" source="1.6" target="1.6"/>
   </target>
 
