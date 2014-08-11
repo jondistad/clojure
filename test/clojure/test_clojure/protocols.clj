@@ -571,11 +571,11 @@
     (let [r (reify
              ExampleProtocol
              (bar [this o] o)
-             (baz [this] 1)
-             (baz [this o] 2))]
+             (baz [this] "1")
+             (baz [this o] "2"))]
       (= :foo (.bar r :foo))
-      (= 1 (.baz r))
-      (= 2 (.baz r nil))))
+      (= "1" (.baz r))
+      (= "2" (.baz r nil))))
   (testing "destructuring in method def"
     (let [r (reify
              ExampleProtocol
