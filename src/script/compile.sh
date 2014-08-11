@@ -34,7 +34,13 @@ BUILD_DIR="$PWD/bootstrap"
 
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
+CLJ_JAR="/Users/jon/.m2/repository/org/clojure/clojure/1.7.0-master-SNAPSHOT/clojure-1.7.0-master-SNAPSHOT.jar"
 
-java -cp /Users/jon/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar:src/clj -Dclojure.compile.path="$BUILD_DIR" clojure.lang.Compile $(echo "$NAMESPACES" | xargs)
+if [[ "$1" == "repl" ]]; then
+    java -cp src/clj:"$CLJ_JAR" clojure.main
+else 
+    java -cp src/clj:"$CLJ_JAR" -Dclojure.compile.path="$BUILD_DIR" clojure.lang.Compile $(echo "$NAMESPACES" | xargs)
+fi
+
 
 ant compile-java
