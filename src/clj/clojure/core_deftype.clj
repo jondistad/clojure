@@ -591,6 +591,29 @@
                      (str "method " (.sym v) " of protocol " (.sym p))
                      (str "function " (.sym v)))))))))
 
+(def ^:private prim-tags
+  #{'objects 'ints 'longs 'floats 'doubles 'chars 'shorts 'bytes 'booleans
+    'int 'long 'float 'double 'char 'short 'byte 'boolean})
+
+(defn- resolve-tag [tag]
+  (let [die (fn []
+              (throw (IllegalArgumentException. (str "Unable to resolve classname: " tag))))
+        strcls (fn []
+                 (try
+                   (Class/forName tag)
+                   (catch ClassNotFoundException e
+                     (die))))
+        symcls (fn []
+                 (let [cls (resolve tag)]
+                   (if (class? cls)
+                     cls
+                     (die))))])
+  (condp #(%1 %2) tag
+    prim-tags (prim-tags tag)
+    string? :>> strcls
+    (constantly true) :>> symcls))
+ 
+
 (defn- emit-protocol [name opts+sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
         [opts sigs]
@@ -621,9 +644,9 @@
         meths (mapcat (fn [sig]
                         (let [m (munge (:name sig))]
                           (map #(vector m
-                                        (vec (map (fn [a] (resolve (or (:tag (meta a)) 'Object)))
+                                        (vec (map (fn [a] (resolve-tag (or (:tag (meta a)) 'Object)))
                                                   (rest %)))
-                                        (resolve (or (:tag sig) 'Object)))
+                                        (resolve-tag (or (:tag sig) 'Object)))
                                (:arglists sig))))
                       (vals sigs))]
   `(do
