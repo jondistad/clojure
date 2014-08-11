@@ -1,4 +1,4 @@
 (ns clojure.lang)
 
 (defprotocol Seqable
-  (-seq [_]))
+  (^clojure.lang.ISeq seq [_]))

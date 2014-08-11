@@ -619,7 +619,7 @@
                                            :doc doc}))))
                         {} sigs))
         meths (mapcat (fn [sig]
-                        (let [m (munge (:name sig))]
+                        (let [m (with-meta (munge (:name sig)) {:tag (:tag sig)})]
                           (map #(vector m (vec (repeat (dec (count %))'Object)) 'Object) 
                                (:arglists sig))))
                       (vals sigs))]
