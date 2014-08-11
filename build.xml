@@ -46,7 +46,7 @@
   <target name="compile-clojure"
           description="Compile Clojure sources.">
     <java classname="clojure.lang.Compile"
-          classpath="${maven.compile.classpath}:${build}:${bootstrap}:${cljsrc}"
+          classpath="${maven.compile.classpath}:${build}:${cljsrc}:${bootstrap}"
           failonerror="true"
           fork="true">
       <sysproperty key="clojure.compile.path" value="${build}"/>
