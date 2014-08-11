@@ -412,11 +412,15 @@ static public void load(String scriptbase) throws IOException, ClassNotFoundExce
 }
 
 static public void load(String scriptbase, boolean failIfNotFound) throws IOException, ClassNotFoundException{
-	String classfile = scriptbase + LOADER_SUFFIX + ".class";
 	String cljfile = scriptbase + ".clj";
-	URL classURL = getResource(baseLoader(),classfile);
+	String classfile = scriptbase + LOADER_SUFFIX + ".class";
 	URL cljURL = getResource(baseLoader(), cljfile);
+	URL classURL = getResource(baseLoader(),classfile);
+
 	boolean loaded = false;
+
+	if (booleanCast(Compiler.COMPILE_FILES.deref()) && (cljURL != null))
+		compile(cljfile);
 
 	if((classURL != null &&
 	    (cljURL == null
@@ -434,10 +438,7 @@ static public void load(String scriptbase, boolean failIfNotFound) throws IOExce
 		}
 	}
 	if(!loaded && cljURL != null) {
-		if(booleanCast(Compiler.COMPILE_FILES.deref()))
-			compile(cljfile);
-		else
-			loadResourceScript(RT.class, cljfile);
+		loadResourceScript(RT.class, cljfile);
 	}
 	else if(!loaded && failIfNotFound)
 		throw new FileNotFoundException(String.format("Could not locate %s or %s on classpath: ", classfile, cljfile));
