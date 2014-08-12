@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#set -x
+set -e
 
 NAMESPACES="
 clojure.core
@@ -47,5 +47,3 @@ else
     java -cp src/clj:"$BUILD_DIR" -Dclojure.compile.path="$BUILD_DIR" -Djava.awt.headless=true clojure.lang.Compile $(echo "$NAMESPACES" | xargs)
 fi
 
-
-ant compile-java
