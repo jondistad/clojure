@@ -3696,12 +3696,14 @@ static class InvokeExpr implements Expr{
 				if(args.count() == arity)
 					{
 					String primc = FnMethod.primInterface(args);
-					if(primc != null)
+					try {
+					if(primc != null && (Class.forName(primc).isInstance(v.deref())))
 						return analyze(context,
 						               RT.listStar(Symbol.intern(".invokePrim"),
 						                        ((Symbol) form.first()).withMeta(RT.map(RT.TAG_KEY, Symbol.intern(primc))),
 						                        form.next()));
 					break;
+					} catch(ClassNotFoundException e) { Util.sneakyThrow(e); }
 					}
 				}
 			}

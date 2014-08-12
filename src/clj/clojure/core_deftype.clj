@@ -592,14 +592,14 @@
                      (str "function " (.sym v)))))))))
 
 (def ^:private prim-to-box
-  {'int Integer
-   'long Long
-   'float Float
-   'double Double
-   'char Character
-   'short Short
-   'byte Byte
-   'boolean Boolean})
+  {'int 'Integer
+   'long 'Long
+   'float 'Float
+   'double 'Double
+   'char 'Character
+   'short 'Short
+   'byte 'Byte
+   'boolean 'Boolean})
 (def ^:private prim-tags
   (set (keys prim-to-box)))
 (def ^:private array-tags
@@ -608,7 +608,7 @@
   (set (concat prim-tags array-tags)))
 
 (defn- resolve-tag [tag]
-  (when tag
+  (if tag
     (let [die (fn []
                 (throw (IllegalArgumentException. (str "Unable to resolve classname: " tag))))]
       (cond
@@ -618,14 +618,20 @@
                        (catch ClassNotFoundException e
                          (die)))
        (class? (resolve tag)) (resolve tag)
-       :else (die)))))
+       :else (die)))
+    'Object))
 
 (defn- box-tag [tag]
   (or (prim-to-box tag) tag))
-(defn- assoc-some [m k v]
-  (if (some? v)
-    (assoc m k v)
-    m))
+(defn- assoc-some
+  ([m k v]
+     (if (some? v)
+       (assoc m k v)
+       m))
+  ([m k v & kvs]
+     (if (even? (count kvs))
+       (reduce1 (fn [m [k v]] (assoc-some m k v)) m (cons [k v] (partition 2 kvs)))
+       (throw (IllegalArgumentException. "Requires even number of key/value pairs")))))
 
 (defn- emit-protocol [name opts+sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
@@ -646,10 +652,9 @@
                                     (recur (conj as (with-meta
                                                       (vec (map (fn [p]
                                                                   (let [{tag :tag} (meta p)]
-                                                                    (vary-meta p assoc-some :tag (box-tag tag))))
+                                                                    (vary-meta p assoc-some :tag tag)))
                                                                 (first rs)))
-                                                      (assoc-some (meta (first rs))
-                                                                  :tag (box-tag ret-tag))))
+                                                      (assoc-some (meta (first rs)) :tag ret-tag)))
                                            (next rs))
                                     [(seq as) (first rs)]))]
                             (when (some #{0} (map count arglists))
@@ -665,9 +670,9 @@
         meths (mapcat (fn [sig]
                         (let [m (munge (:name sig))]
                           (map #(vector m
-                                        (vec (map (fn [a] (or (resolve-tag (:tag (meta a))) 'Object))
+                                        (vec (map (fn [a] (resolve-tag (:tag (meta a))))
                                                   (rest %)))
-                                        (or (resolve-tag (:tag sig)) 'Object))
+                                        (resolve-tag (:tag (meta %))))
                                (:arglists sig))))
                       (vals sigs))]
   `(do
