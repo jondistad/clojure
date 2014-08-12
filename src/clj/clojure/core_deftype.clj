@@ -591,28 +591,41 @@
                      (str "method " (.sym v) " of protocol " (.sym p))
                      (str "function " (.sym v)))))))))
 
+(def ^:private prim-to-box
+  {'int Integer
+   'long Long
+   'float Float
+   'double Double
+   'char Character
+   'short Short
+   'byte Byte
+   'boolean Boolean})
 (def ^:private prim-tags
-  #{'objects 'ints 'longs 'floats 'doubles 'chars 'shorts 'bytes 'booleans
-    'int 'long 'float 'double 'char 'short 'byte 'boolean})
+  (set (keys prim-to-box)))
+(def ^:private array-tags
+  #{'objects 'ints 'longs 'floats 'doubles 'chars 'shorts 'bytes 'booleans})
+(def ^:private literal-tags
+  (set (concat prim-tags array-tags)))
 
 (defn- resolve-tag [tag]
-  (let [die (fn []
-              (throw (IllegalArgumentException. (str "Unable to resolve classname: " tag))))
-        strcls (fn []
-                 (try
-                   (Class/forName tag)
-                   (catch ClassNotFoundException e
-                     (die))))
-        symcls (fn []
-                 (let [cls (resolve tag)]
-                   (if (class? cls)
-                     cls
-                     (die))))])
-  (condp #(%1 %2) tag
-    prim-tags (prim-tags tag)
-    string? :>> strcls
-    (constantly true) :>> symcls))
- 
+  (when tag
+    (let [die (fn []
+                (throw (IllegalArgumentException. (str "Unable to resolve classname: " tag))))]
+      (cond
+       (literal-tags tag) tag
+       (string? tag) (try
+                       (Class/forName tag)
+                       (catch ClassNotFoundException e
+                         (die)))
+       (class? (resolve tag)) (resolve tag)
+       :else (die)))))
+
+(defn- box-tag [tag]
+  (or (prim-to-box tag) tag))
+(defn- assoc-some [m k v]
+  (if (some? v)
+    (assoc m k v)
+    m))
 
 (defn- emit-protocol [name opts+sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
@@ -625,11 +638,19 @@
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
+                                {ret-tag :tag} name-meta
                                 mname (with-meta (first s) nil)
                                 [arglists doc]
                                 (loop [as [] rs (rest s)]
                                   (if (vector? (first rs))
-                                    (recur (conj as (first rs)) (next rs))
+                                    (recur (conj as (with-meta
+                                                      (vec (map (fn [p]
+                                                                  (let [{tag :tag} (meta p)]
+                                                                    (vary-meta p assoc-some :tag (box-tag tag))))
+                                                                (first rs)))
+                                                      (assoc-some (meta (first rs))
+                                                                  :tag (box-tag ret-tag))))
+                                           (next rs))
                                     [(seq as) (first rs)]))]
                             (when (some #{0} (map count arglists))
                               (throw (IllegalArgumentException. (str "Definition of function " mname " in protocol " name " must take at least one arg."))))
@@ -644,9 +665,9 @@
         meths (mapcat (fn [sig]
                         (let [m (munge (:name sig))]
                           (map #(vector m
-                                        (vec (map (fn [a] (resolve-tag (or (:tag (meta a)) 'Object)))
+                                        (vec (map (fn [a] (or (resolve-tag (:tag (meta a))) 'Object))
                                                   (rest %)))
-                                        (resolve-tag (or (:tag sig) 'Object)))
+                                        (or (resolve-tag (:tag sig)) 'Object))
                                (:arglists sig))))
                       (vals sigs))]
   `(do
