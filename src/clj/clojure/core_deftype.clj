@@ -565,7 +565,9 @@
                   (fn [args]
                     (let [gargs (map #(gensym (str "gf__" % "__")) args)
                           target (first gargs)]
-                      `([~@gargs]
+                      `(~(with-meta
+                           (vec (map #(with-meta %1 (meta %2)) gargs args))
+                           (meta args))
                           (let [cache# (.__methodImplCache ~gthis)
                                 f# (.fnFor cache# (clojure.lang.Util/classOf ~target))]
                             (if f# 
@@ -659,6 +661,8 @@
                                     [(seq as) (first rs)]))]
                             (when (some #{0} (map count arglists))
                               (throw (IllegalArgumentException. (str "Definition of function " mname " in protocol " name " must take at least one arg."))))
+                            (when (some (comp :tag meta first) arglists)
+                              (throw (IllegalArgumentException. (str "Function " mname " in protocol " name " has a type hint on the first arg."))))
                             (when (m (keyword mname))
                               (throw (IllegalArgumentException. (str "Function " mname " in protocol " name " was redefined. Specify all arities in single definition."))))
                             (assoc m (keyword mname)
