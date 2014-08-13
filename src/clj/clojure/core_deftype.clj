@@ -565,9 +565,7 @@
                   (fn [args]
                     (let [gargs (map #(gensym (str "gf__" % "__")) args)
                           target (first gargs)]
-                      `(~(with-meta
-                           (vec (map #(with-meta %1 (meta %2)) gargs args))
-                           (meta args))
+                      `([~@gargs]
                           (let [cache# (.__methodImplCache ~gthis)
                                 f# (.fnFor cache# (clojure.lang.Util/classOf ~target))]
                             (if f# 
@@ -651,12 +649,7 @@
                                 [arglists doc]
                                 (loop [as [] rs (rest s)]
                                   (if (vector? (first rs))
-                                    (recur (conj as (with-meta
-                                                      (vec (map (fn [p]
-                                                                  (let [{tag :tag} (meta p)]
-                                                                    (vary-meta p assoc-some :tag tag)))
-                                                                (first rs)))
-                                                      (assoc-some (meta (first rs)) :tag ret-tag)))
+                                    (recur (conj as (vary-meta (first rs) assoc-some :tag ret-tag))
                                            (next rs))
                                     [(seq as) (first rs)]))]
                             (when (some #{0} (map count arglists))
@@ -676,7 +669,7 @@
                           (map #(vector m
                                         (vec (map (fn [a] (resolve-tag (:tag (meta a))))
                                                   (rest %)))
-                                        (resolve-tag (:tag (meta %))))
+                                        (resolve-tag (:tag sig)))
                                (:arglists sig))))
                       (vals sigs))]
   `(do
@@ -700,8 +693,18 @@
                         ~(apply hash-map 
                                 (mapcat 
                                  (fn [s]
-                                   [`(intern *ns* (with-meta '~(:name s) (merge '~s {:protocol (var ~name)})))
-                                    (emit-method-builder (:on-interface opts) (:name s) (:on s) (:arglists s))])
+                                   (let [do-box (fn [m]
+                                                  (assoc-some m :tag (box-tag (:tag m))))
+                                         box-tags (fn [args]
+                                                    (with-meta
+                                                      (vec (map #(vary-meta % do-box)
+                                                                args))
+                                                      (do-box (meta args))))]
+                                     [`(intern *ns* (with-meta '~(:name s)
+                                                      (merge '~s
+                                                             {:protocol (var ~name)}
+                                                             {:arglists '~(map box-tags (:arglists s))})))
+                                      (emit-method-builder (:on-interface opts) (:name s) (:on s) (:arglists s))]))
                                  (vals sigs)))))
      (-reset-methods ~name)
      '~name)))
