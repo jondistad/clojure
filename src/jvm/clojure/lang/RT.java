@@ -412,11 +412,10 @@ static public void load(String scriptbase) throws IOException, ClassNotFoundExce
 }
 
 static public void load(String scriptbase, boolean failIfNotFound) throws IOException, ClassNotFoundException{
-	String cljfile = scriptbase + ".clj";
 	String classfile = scriptbase + LOADER_SUFFIX + ".class";
-	URL cljURL = getResource(baseLoader(), cljfile);
+	String cljfile = scriptbase + ".clj";
 	URL classURL = getResource(baseLoader(),classfile);
-
+	URL cljURL = getResource(baseLoader(), cljfile);
 	boolean loaded = false;
 
 	if (booleanCast(Compiler.COMPILE_FILES.deref()) && (cljURL != null)) {
