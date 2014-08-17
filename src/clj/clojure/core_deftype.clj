@@ -665,7 +665,7 @@
                                            :doc doc}))))
                         {} sigs))
         meths (mapcat (fn [sig]
-                        (let [m (munge (:name sig))]
+                        (let [m (munge (or (:on sig) (:name sig)))]
                           (map #(vector m
                                         (vec (map (fn [a] (resolve-tag (:tag (meta a))))
                                                   (rest %)))
