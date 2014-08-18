@@ -33,6 +33,24 @@
 (defprotocol Counted
   (^{:tag int :on count} -count [_]))
 
+(defprotocol Indexed
+  :continues [Counted]
+  (^{:on nth} -nth [_ ^int i] [_ ^int i not-found]))
+
+(defprotocol IChunk
+  :continues [Indexed]
+  (^{:tag clojure.lang.IChunk :on dropFirst} -drop-first [_])
+  (^{:on reduce} -chunk-reduce [_ ^clojure.lang.IFn f start]))
+
+(defprotocol Sequential)
+
+(defprotocol IChunkedSeq
+  :continues [ISeq Sequential]
+  (^{:tag clojure.lang.IChunk :on chunkedFirst} -chunked-first [_])
+  (^{:tag clojure.lang.ISeq :on chunkedNext} -chunked-next [_])
+  (^{:tag clojure.lang.ISeq :on chunkedMore} -chunked-more [_]))
+
+
 (defprotocol Fn)
 
 (defprotocol IDeref
