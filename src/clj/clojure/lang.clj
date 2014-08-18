@@ -50,6 +50,21 @@
   (^{:tag clojure.lang.ISeq :on chunkedNext} -chunked-next [_])
   (^{:tag clojure.lang.ISeq :on chunkedMore} -chunked-more [_]))
 
+(defprotocol IEditableCollection
+  (^{:tag clojure.lang.ITransientCollection :on asTransient} -transient [_]))
+
+(defprotocol IExceptionInfo
+  (^{:tag clojure.lang.IPersistentMap :on getData} -get-data [_]))
+
+(defprotocol IHashEq
+  (^{:tag int :on hasheq} -hasheq [_]))
+
+(defprotocol ILookupThunk
+  (^{:on get} (-lookup-thunk-get [_ o])))
+(defprotocol IKeywordLookup
+  (^{:tag clojure.lang.ILookupThunk :on getLookupThunk} -lookup-thunk))
+(defprotocol ILookupSite
+  (^{:tag clojure.lang.ILookupThunk :on fault} -fault [_ target]))
 
 (defprotocol Fn)
 
