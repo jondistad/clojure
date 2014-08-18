@@ -37,12 +37,16 @@
   :continues [Counted]
   (^{:on nth} -nth [_ ^int i] [_ ^int i not-found]))
 
+(defprotocol Sequential)
+
+(defprotocol IndexedSeq
+  :continues [ISeq Sequential Counted]
+  (^{:tag int :on index} -index [_]))
+
 (defprotocol IChunk
   :continues [Indexed]
   (^{:tag clojure.lang.IChunk :on dropFirst} -drop-first [_])
   (^{:on reduce} -chunk-reduce [_ ^clojure.lang.IFn f start]))
-
-(defprotocol Sequential)
 
 (defprotocol IChunkedSeq
   :continues [ISeq Sequential]
@@ -73,6 +77,14 @@
 
 (defprotocol IBlockingDeref
   (^{:on deref} -blocking-deref [_ ^long ms timeout]))
+
+(defprotocol IPending
+  (^{:tag boolean :on isRealized} -realized? [_]))
+
+(defprotocol IProxy
+  (^{:tag void :on __initClojureFnMappings} -init-clojure-fn-mappings! [_ ^clojure.lang.IPersistentMap m])
+  (^{:tag void :on __updateClojureFnMappings} -update-clojure-fn-mappings! [_ ^clojure.lang.IPersistentMap m])
+  (^{:tag clojure.lang.IPersistentMap :on __getClojureFnMappings} -clojure-fn-mappings [_]))
 
 (comment
 
