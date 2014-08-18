@@ -31,6 +31,7 @@ clojure.lang
 "
 
 BUILD_DIR="$PWD/bootstrap"
+COMPILE_START_FILE="$BUILD_DIR/_COMPILE_BEGIN_"
 
 CLJ_JAR="/Users/jon/.m2/repository/org/clojure/clojure/1.7.0-master-SNAPSHOT/clojure-1.7.0-master-SNAPSHOT-slim.jar"
 
@@ -39,11 +40,14 @@ if [[ "$1" == "repl" ]]; then
 else 
     rm -rf "$BUILD_DIR"
     mkdir -p "$BUILD_DIR"
+    touch "$COMPILE_START_FILE"
 
     cd "$BUILD_DIR"
     jar xf "$CLJ_JAR"
     cd -
 
     java -cp src/clj:"$BUILD_DIR" -Dclojure.compile.path="$BUILD_DIR" -Djava.awt.headless=true clojure.lang.Compile $(echo "$NAMESPACES" | xargs)
+
+    find "$BUILD_DIR" -name \*.class -and -not -newer "$COMPILE_START_FILE" -exec rm -f {} \;
 fi
 
