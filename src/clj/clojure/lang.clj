@@ -10,6 +10,12 @@
   (^{:tag clojure.lang.IPersistentCollection :on empty} -empty [_])
   (^{:tag boolean :on equiv} -equiv [_ o]))
 
+(defprotocol ISeq
+  :continues [IPersistentCollection]
+  (^{:on first} -first [_])
+  (^{:tag clojure.lang.ISeq :on next} -next [_])
+  (^{:tag clojure.lang.ISeq :on more} -rest [_]))
+
 
 (comment
 
