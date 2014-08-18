@@ -16,6 +16,11 @@
   (^{:tag clojure.lang.ISeq :on next} -next [_])
   (^{:tag clojure.lang.ISeq :on more} -rest [_]))
 
+(defprotocol IMeta
+  (^{:tag clojure.lang.IPersistentMap :on meta} -meta [_]))
+(defprotocol IObj
+  (^{:tag clojure.lang.IObj :on withMeta} -with-meta [_ ^clojure.lang.IPersistentMap m]))
+
 
 (comment
 
