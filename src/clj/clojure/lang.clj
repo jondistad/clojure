@@ -33,6 +33,11 @@
 (defprotocol Counted
   (^{:tag int :on count} -count [_]))
 
+(defprotocol Fn)
+
+(defprotocol IDeref
+  (^{:on deref} -deref [_]))
+
 (comment
 
  (defprotocol Fn
