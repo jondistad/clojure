@@ -71,6 +71,9 @@
 (defprotocol IDeref
   (^{:on deref} -deref [_]))
 
+(defprotocol IBlockingDeref
+  (^{:on deref} -blocking-deref [_ ^long ms timeout]))
+
 (comment
 
  (defprotocol Fn
