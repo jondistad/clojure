@@ -1,14 +1,14 @@
 (ns clojure.lang)
 
 (defprotocol Seqable
-  (^clojure.lang.ISeq seq [_]))
+  (^{:tag clojure.lang.ISeq :on seq} -seq [_]))
 
 (defprotocol IPersistentCollection
-  :extends Seqable
-  (^int count [_])
-  (^clojure.lang.IPersistentCollection cons [_ o])
-  (^clojure.lang.IPersistentCollection empty [_])
-  (^boolean equiv [_ o]))
+  :continues [Seqable]
+  (^{:tag int :on count} -coll-count [_])
+  (^{:tag clojure.lang.IPersistentCollection :on cons} -conj [_ o])
+  (^{:tag clojure.lang.IPersistentCollection :on empty} -empty [_])
+  (^{:tag boolean :on equiv} -equiv [_ o]))
 
 
 (comment
