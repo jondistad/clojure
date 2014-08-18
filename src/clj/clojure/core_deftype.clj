@@ -600,7 +600,7 @@
    'short 'Short
    'byte 'Byte
    'boolean 'Boolean
-   'void Object})
+   'void 'Object})
 (def ^:private prim-tags
   (set (keys prim-to-box)))
 (def ^:private array-tags
