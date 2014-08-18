@@ -612,13 +612,24 @@
     (let [die (fn []
                 (throw (IllegalArgumentException. (str "Unable to resolve classname: " tag))))]
       (cond
-       (literal-tags tag) tag
-       (string? tag) (try
-                       (Class/forName tag)
-                       (catch ClassNotFoundException e
-                         (die)))
-       (class? (resolve tag)) (resolve tag)
-       :else (die)))
+       (literal-tags tag)
+       tag
+
+       (string? tag)
+       (try
+         (Class/forName tag)
+         (catch ClassNotFoundException e
+           (die)))
+
+       (class? (resolve tag))
+       (resolve tag)
+
+       (and (var? (resolve tag))
+            (protocol? @(resolve tag)))
+       (:on-interface @(resolve tag))
+
+       :else
+       (die)))
     'Object))
 
 (defn- box-tag [tag]
@@ -671,10 +682,14 @@
                                                   (rest %)))
                                         (resolve-tag (:tag sig)))
                                (:arglists sig))))
-                      (vals sigs))]
+                      (vals sigs))
+        ext-prots (when-let [ex (:extends opts)]
+                    (filter var? (map resolve ex)))]
   `(do
      (defonce ~name {})
-     (gen-interface :name ~iname :methods ~meths)
+     (gen-interface :name ~iname :methods ~meths
+                    ~@(if-let [ex (:extends opts)]
+                        (list :extends (vec (map resolve-tag ex)))))
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      ~(when sigs
         `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
@@ -682,6 +697,8 @@
                      (assoc ~opts 
                        :sigs '~sigs 
                        :var (var ~name)
+                       ~@(when ext-prots
+                           (list :extends (vec ext-prots)))
                        :method-map 
                          ~(and (:on opts)
                                (apply hash-map 
