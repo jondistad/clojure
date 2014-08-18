@@ -60,9 +60,9 @@
   (^{:tag int :on hasheq} -hasheq [_]))
 
 (defprotocol ILookupThunk
-  (^{:on get} (-lookup-thunk-get [_ o])))
+  (^{:on get} -lookup-thunk-get [_ o]))
 (defprotocol IKeywordLookup
-  (^{:tag clojure.lang.ILookupThunk :on getLookupThunk} -lookup-thunk))
+  (^{:tag clojure.lang.ILookupThunk :on getLookupThunk} -get-lookup-thunk [_ ^clojure.lang.Keyword k]))
 (defprotocol ILookupSite
   (^{:tag clojure.lang.ILookupThunk :on fault} -fault [_ target]))
 
