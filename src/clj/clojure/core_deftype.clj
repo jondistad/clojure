@@ -646,17 +646,17 @@
 
 (defn- emit-protocol [name opts+sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
-        [{extends :extends :as opts} sigs]
+        [{continues :continues :as opts} sigs]
         (loop [opts {:on (list 'quote iname) :on-interface iname} sigs opts+sigs]
           (condp #(%1 %2) (first sigs) 
             string? (recur (assoc opts :doc (first sigs)) (next sigs))
             keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))
             [opts sigs]))
-        extends (doall (for [ex-sym extends
-                             :let [ex-var (resolve ex-sym)]]
-                         (if (and (var? ex-var) (protocol? @ex-var))
-                           ex-var
-                           (throw (IllegalArgumentException. (str ex-sym " is not a protocol."))))))
+        continues (doall (for [cont-sym continues
+                             :let [cont-var (resolve cont-sym)]]
+                         (if (and (var? cont-var) (protocol? @cont-var))
+                           cont-var
+                           (throw (IllegalArgumentException. (str cont-sym " is not a protocol."))))))
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
@@ -691,7 +691,7 @@
   `(do
      (defonce ~name {})
      (gen-interface :name ~iname :methods ~meths
-                    :extends [~@(map (comp :on-interface deref) extends)])
+                    :extends [~@(map (comp :on-interface deref) continues)])
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      ~(when sigs
         `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
@@ -699,7 +699,7 @@
                      (assoc ~opts 
                        :sigs '~sigs 
                        :var (var ~name)
-                       :extends [~@extends]
+                       :continues [~@continues]
                        :method-map 
                          ~(and (:on opts)
                                (apply hash-map 
@@ -819,15 +819,15 @@
   {:added "1.2"} 
   [atype & proto+mmaps]
   (let [named-protos (map first (partition 2 proto+mmaps))
-        exts (apply hash-map (mapcat (juxt identity :extends) named-protos))]
+        exts (apply hash-map (mapcat (juxt identity :continues) named-protos))]
     (doseq [proto named-protos
-            ext (map deref (:extends proto))
+            cont (map deref (:continues proto))
             :when (protocol? proto)]
-      (when-not (or (extends? ext atype)
-                    (some #{ext} named-protos))
+      (when-not (or (extends? cont atype)
+                    (some #{cont} named-protos))
         (throw (IllegalArgumentException.
-                (str "Protocol " (:var proto) " extends protocol " (:var ext) " which is not already extended to " atype "."
-                     " You must add definitions for " (:var ext) " to this extension."))))))
+                (str "Protocol " (:var proto) " continues protocol " (:var cont) " which is not already extended to " atype "."
+                     " You must add definitions for " (:var cont) " to this extension."))))))
   (doseq [[proto mmap] (partition 2 proto+mmaps)]
     (when-not (protocol? proto)
       (throw (IllegalArgumentException.
