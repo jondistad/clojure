@@ -19,7 +19,16 @@
 (defprotocol IMeta
   (^{:tag clojure.lang.IPersistentMap :on meta} -meta [_]))
 (defprotocol IObj
+  :continues [IMeta]
   (^{:tag clojure.lang.IObj :on withMeta} -with-meta [_ ^clojure.lang.IPersistentMap m]))
+
+(defprotocol ILookup
+  (^{:on valAt} -val-at [_ o] [_ o not-found]))
+(defprotocol Associative
+  :continues [IPersistentCollection ILookup]
+  (^{:tag boolean :on containsKey} -contains-key? [_ k])
+  (^{:tag clojure.lang.IMapEntry :on entryAt} -entry-at [_ k])
+  (^{:tag clojure.lang.Associative :on assoc} -assoc [_ k v]))
 
 
 (comment
