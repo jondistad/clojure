@@ -43,6 +43,16 @@
       (recur (assoc opts k v) rs)
       [opts s])))
 
+(defn- remap-protocol-methodname [maybe-prot mname]
+  (if (var? (resolve maybe-prot))
+    (if-let [{method-map :method-map} @(resolve maybe-prot)]
+      (-> method-map
+          (get (keyword mname) mname)
+          name
+          symbol
+          (with-meta (meta mname))))
+    mname))
+
 (defn- parse-impls [specs]
   (loop [ret {} s specs]
     (if (seq s)
@@ -60,9 +70,12 @@
                        set
                        (disj 'Object 'java.lang.Object)
                        vec)
-        methods (map (fn [[name params & body]]
-                       (cons name (maybe-destructured params body)))
-                     (apply concat (vals impls)))]
+        methods (apply concat
+                       (for [[iface meths] impls]
+                         (map (fn [[name params & body]]
+                                (cons (remap-protocol-methodname iface name)
+                                      (maybe-destructured params body)))
+                              meths)))]
     (when-let [bad-opts (seq (remove #{:no-print} (keys opts)))]
       (throw (IllegalArgumentException. (apply print-str "Unsupported option(s) -" bad-opts))))
     [interfaces methods opts]))
