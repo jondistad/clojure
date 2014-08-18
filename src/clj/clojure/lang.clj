@@ -30,6 +30,8 @@
   (^{:tag clojure.lang.IMapEntry :on entryAt} -entry-at [_ k])
   (^{:tag clojure.lang.Associative :on assoc} -assoc [_ k v]))
 
+(defprotocol Counted
+  (^{:tag int :on count} -count [_]))
 
 (comment
 
