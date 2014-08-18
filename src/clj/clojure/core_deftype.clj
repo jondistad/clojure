@@ -599,7 +599,8 @@
    'char 'Character
    'short 'Short
    'byte 'Byte
-   'boolean 'Boolean})
+   'boolean 'Boolean
+   'void Object})
 (def ^:private prim-tags
   (set (keys prim-to-box)))
 (def ^:private array-tags
