@@ -894,8 +894,9 @@
 (defmacro extend-protocol 
   "Useful when you want to provide several implementations of the same
   protocol all at once. Takes a single protocol and the implementation
-  of that protocol for one or more types. Expands into calls to
-  extend-type:
+  of that protocol for one or more types. Note that if this protocol
+  continues another, these types will already have to be extended by
+  all parent protocols. Expands into calls to extend-type:
 
   (extend-protocol Protocol
     AType
