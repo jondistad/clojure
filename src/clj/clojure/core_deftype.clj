@@ -708,7 +708,8 @@
   `(do
      (defonce ~name {})
      (gen-interface :name ~iname :methods ~meths
-                    :extends [~@(cons extends-interface (map (comp :on-interface deref) continues))])
+                    :extends [~@(when extends-interface (list extends-interface))
+                              ~@(map (comp :on-interface deref) continues)])
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      ~(when sigs
         `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
