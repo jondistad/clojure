@@ -644,7 +644,7 @@
 
        :else
        (die)))
-    'Object))
+    Object))
 
 (defn- box-tag [tag]
   (or (prim-to-box tag) tag))
@@ -658,24 +658,22 @@
        (reduce1 (fn [m [k v]] (assoc-some m k v)) m (cons [k v] (partition 2 kvs)))
        (throw (IllegalArgumentException. "Requires even number of key/value pairs")))))
 
-(defn- emit-protocol [name opts+sigs]
+(defn- parse-protocol-opts+sigs [opts+sigs]
+  (loop [opts {} sigs opts+sigs]
+    (condp #(%1 %2) (first sigs) 
+      string? (recur (assoc opts :doc (first sigs)) (next sigs))
+      keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))
+      [opts sigs])))
+
+(defn- emit-protocol [name opts sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
-        [{:keys [continues extends-interfaces] :as opts} sigs]
-        (loop [opts {:on (list 'quote iname) :on-interface iname} sigs opts+sigs]
-          (condp #(%1 %2) (first sigs) 
-            string? (recur (assoc opts :doc (first sigs)) (next sigs))
-            keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))
-            [opts sigs]))
+        opts (merge {:on (list 'quote iname) :on-interface iname} opts)
+        {:keys [continues extends-interface]} opts
         continues (doall (for [cont-sym continues
                              :let [cont-var (resolve cont-sym)]]
                          (if (and (var? cont-var) (protocol? @cont-var))
                            cont-var
                            (throw (IllegalArgumentException. (str cont-sym " is not a protocol."))))))
-        extends-interfaces (doall (for [ifc-sym extends-interfaces
-                                        :let [iface (resolve ifc-sym)]]
-                                    (if (and (class? iface) (.isInterface ^Class iface))
-                                      iface
-                                      (throw (IllegalArgumentException. (str ifc-sym " is not an interface."))))))
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
@@ -710,7 +708,7 @@
   `(do
      (defonce ~name {})
      (gen-interface :name ~iname :methods ~meths
-                    :extends [~@(concat extends-interfaces (map (comp :on-interface deref) continues))])
+                    :extends [~@(cons extends-interface (map (comp :on-interface deref) continues))])
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      ~(when sigs
         `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
@@ -719,7 +717,7 @@
                        :sigs '~sigs 
                        :var (var ~name)
                        :continues [~@continues]
-                       :extends-interfaces [~@extends-interfaces]
+                       :extends-interface ~extends-interface
                        :method-map 
                          ~(and (:on opts)
                                (apply hash-map 
@@ -746,6 +744,38 @@
                                  (vals sigs)))))
      (-reset-methods ~name)
      '~name)))
+
+(defn- emit-wrap-interface
+  [iface pname sigs]
+  (when-not (and (class? (resolve iface))
+                 (.isInterface (resolve iface)))
+    (throw (IllegalArgumentException. (str iface " is not an interface."))))
+  (let [^Class iface (resolve iface)
+        name-sym #(-> % .getName symbol)
+        tag-sym (comp name-sym resolve-tag :tag meta)
+        type-map #(update-in %1 [(first %2)] conj (vec (rest %2)))
+        imeths (reduce1 type-map
+                        {}
+                        (map (fn [^java.lang.reflect.Method m]
+                               (vector (name-sym m)
+                                       (vec (map name-sym (.getParameterTypes m)))
+                                       (name-sym (.getReturnType m))))
+                             (.getMethods iface)))
+        pmeths (reduce1 type-map
+                        {}
+                        (apply concat
+                               (for [[n & als] sigs]
+                                 (map #(vector (get (meta n) :on n)
+                                               (vec (map tag-sym (rest %)))
+                                               (tag-sym n))
+                                      als))))]
+    (when (not= imeths pmeths)
+      (throw (IllegalArgumentException. "Signatures do not match interface.")))
+    (emit-protocol pname {:extends-interface iface} sigs)))
+
+(defmacro wrap-interface
+  [iface pname & sigs]
+  (emit-wrap-interface iface pname sigs))
 
 (defmacro defprotocol 
   "A protocol is a named set of named methods and their signatures:
@@ -799,7 +829,10 @@
   => 17"
   {:added "1.2"} 
   [name & opts+sigs]
-  (emit-protocol name opts+sigs))
+  (let [[opts sigs] (parse-protocol-opts+sigs opts+sigs)]
+    (when (contains? opts :extends-interface)
+      (throw (IllegalArgumentException. "Do not pass :extends-interface directly. Use wrap-interface instead.")))
+    (emit-protocol name opts sigs)))
 
 (defn extend 
   "Implementations of protocol methods can be provided using the extend construct:
