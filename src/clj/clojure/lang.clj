@@ -86,6 +86,20 @@
   (^{:tag void :on __updateClojureFnMappings} -update-clojure-fn-mappings! [_ ^clojure.lang.IPersistentMap m])
   (^{:tag clojure.lang.IPersistentMap :on __getClojureFnMappings} -clojure-fn-mappings [_]))
 
+(wrap-interface
+ java.util.Map$Entry
+ JavaMapEntry
+ (^{:tag boolean :on equals} -jme-equiv [_ o])
+ (^{:on getKey} -jme-key [_])
+ (^{:on getValue} -jme-val [_])
+ (^{:tag int :on hashCode} -jme-hash-code [_])
+ (^{:on setValue} -jme-set-value! [_ v]))
+
+(defprotocol IMapEntry
+  :continues [JavaMapEntry]
+  (^{:on key} -key [_])
+  (^{:on val} -val [_]))
+
 (comment
 
  (defprotocol Fn
