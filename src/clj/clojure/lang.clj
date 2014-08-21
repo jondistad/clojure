@@ -13,7 +13,7 @@
   (^{:tag clojure.lang.IEmptyableCollection :on empty} -empty [coll]))
 
 (defprotocol Counted
-  (^{:tag clojure.lang.ICountableCollection :on count} -coll-count))
+  (^{:tag clojure.lang.Counted :on count} -count [coll]))
 
 (union-protocols IPersistentCollection
   Seqable
