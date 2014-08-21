@@ -1,58 +1,102 @@
 (ns clojure.lang)
 
 (defprotocol Seqable
-  (^{:tag clojure.lang.ISeq :on seq} -seq [_]))
+  (^{:tag clojure.lang.Seqable :on seq} -seq [s]))
 
-(defprotocol IPersistentCollection
-  :continues [Seqable]
-  (^{:tag int :on count} -coll-count [_])
-  (^{:tag clojure.lang.IPersistentCollection :on cons} -conj [_ o])
-  (^{:tag clojure.lang.IPersistentCollection :on empty} -empty [_])
-  (^{:tag boolean :on equiv} -equiv [_ o]))
+(defprotocol IEquiv
+  (^{:tag boolean :on equiv} -equiv [o other]))
 
-(defprotocol ISeq
-  :continues [IPersistentCollection]
-  (^{:on first} -first [_])
-  (^{:tag clojure.lang.ISeq :on next} -next [_])
-  (^{:tag clojure.lang.ISeq :on more} -rest [_]))
+(defprotocol ICollection
+  (^{:tag clojure.lang.ICollection :on cons} -conj [coll o]))
+
+(defprotocol IEmptyableCollection
+  (^{:tag clojure.lang.IEmptyableCollection :on empty} -empty [coll]))
+
+(defprotocol Counted
+  (^{:tag clojure.lang.ICountableCollection :on count} -coll-count))
+
+(union-protocols IPersistentCollection
+  Seqable
+  IEquiv
+  ICollection
+  IEmptyableCollection
+  Counted)
+
+(defprotocol IFirst
+  (^{:on first} -first [_]))
+
+(defprotocol IRest
+  (^{:tag clojure.lang.ISeq :on rest} -rest [_]))
+
+(defprotocol INext
+  (^{:tag clojure.lang.ISeq :on next} -next [_]))
+
+(union-protocols ISeq
+  IFirst
+  IRest
+  INext)
 
 (defprotocol IMeta
   (^{:tag clojure.lang.IPersistentMap :on meta} -meta [_]))
-(defprotocol IObj
-  :continues [IMeta]
+
+(defprotocol IWithMeta
   (^{:tag clojure.lang.IObj :on withMeta} -with-meta [_ ^clojure.lang.IPersistentMap m]))
+
+(union-protocols IObj
+  IMeta
+  IWithMeta)
 
 (defprotocol ILookup
   (^{:on valAt} -val-at [_ o] [_ o not-found]))
-(defprotocol Associative
-  :continues [IPersistentCollection ILookup]
+
+(defprotocol IAssociative
   (^{:tag boolean :on containsKey} -contains-key? [_ k])
   (^{:tag clojure.lang.IMapEntry :on entryAt} -entry-at [_ k])
   (^{:tag clojure.lang.Associative :on assoc} -assoc [_ k v]))
 
-(defprotocol Counted
-  (^{:tag int :on count} -count [_]))
+(union-protocols Associative
+  IPersistentCollection
+  ILookup
+  IAssociative)
 
-(defprotocol Indexed
-  :continues [Counted]
+(defprotocol IIndexed
   (^{:on nth} -nth [_ ^int i] [_ ^int i not-found]))
+
+(union-protocols Indexed
+  Counted
+  IIndexed)
 
 (defprotocol Sequential)
 
-(defprotocol IndexedSeq
-  :continues [ISeq Sequential Counted]
+(defprotocol IOrdinal
   (^{:tag int :on index} -index [_]))
 
-(defprotocol IChunk
-  :continues [Indexed]
-  (^{:tag clojure.lang.IChunk :on dropFirst} -drop-first [_])
+(union-protocols IndexedSeq
+  ISeq
+  Sequential
+  Counted
+  IOrdinal)
+
+(defprotocol IChunked
+  (^{:tag clojure.lang.IChunked :on dropFirst} -drop-first [_])
   (^{:on reduce} -chunk-reduce [_ ^clojure.lang.IFn f start]))
 
-(defprotocol IChunkedSeq
-  :continues [ISeq Sequential]
-  (^{:tag clojure.lang.IChunk :on chunkedFirst} -chunked-first [_])
+(union-protocols IChunk
+  IChunked
+  Indexed)
+
+(defprotocol IChunkedFirst
+  (^{:tag clojure.lang.IChunked :on chunkedFirst} -chunked-first [_]))
+
+(defprotocol IChunkedNext
   (^{:tag clojure.lang.ISeq :on chunkedNext} -chunked-next [_])
   (^{:tag clojure.lang.ISeq :on chunkedMore} -chunked-more [_]))
+
+(union-protocols IChunkedSeq
+  ISeq
+  Sequential
+  IChunkedFirst
+  IChunkedNext)
 
 (defprotocol IEditableCollection
   (^{:tag clojure.lang.ITransientCollection :on asTransient} -transient [_]))
@@ -94,10 +138,14 @@
   (^{:tag int :on hashCode} -jme-hash-code [_])
   (^{:on setValue} -jme-set-value! [_ v]))
 
-(defprotocol IMapEntry
-  :continues [JavaMapEntry]
-  (^{:on key} -key [_])
+(defprotocol IKeyed
+  (^{:on key} -key [_]))
+(defprotocol IValued
   (^{:on val} -val [_]))
+(union-protocols IMapEntry
+  IKeyed
+  IValued
+  JavaMapEntry)
 
 (comment
 
