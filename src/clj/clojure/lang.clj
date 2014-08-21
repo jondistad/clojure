@@ -80,7 +80,7 @@
   IOrdinal)
 
 (defprotocol IChunked
-  (^{:tag clojure.lang.IChunked :on dropFirst} -drop-first [_])
+  (^{:tag this :on dropFirst} -drop-first [_])
   (^{:on reduce} -chunk-reduce [_ ^clojure.lang.IFn f start]))
 
 (union-protocols IChunk
