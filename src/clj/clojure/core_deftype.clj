@@ -670,10 +670,10 @@
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
         {:keys [continues extends-interface]} opts
         continues (doall (for [cont-sym continues
-                             :let [cont-var (resolve cont-sym)]]
-                         (if (and (var? cont-var) (protocol? @cont-var))
-                           cont-var
-                           (throw (IllegalArgumentException. (str cont-sym " is not a protocol."))))))
+                               :let [cont-var (resolve cont-sym)]]
+                           (if (and (var? cont-var) (protocol? @cont-var))
+                             cont-var
+                             (throw (IllegalArgumentException. (str cont-sym " is not a protocol."))))))
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
