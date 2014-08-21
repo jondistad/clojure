@@ -803,6 +803,10 @@
   [pname & ps]
   (emit-union-protocols pname ps))
 
+(defmacro union-protocols
+  [pname & ps]
+  (emit-union-protocols pname ps))
+
 (defmacro defprotocol 
   "A protocol is a named set of named methods and their signatures:
   (defprotocol AProtocolName
