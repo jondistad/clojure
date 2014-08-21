@@ -524,6 +524,10 @@
   [maybe-p]
   (boolean (:on-interface maybe-p)))
 
+(defn- protocol-union?
+  [maybe-union]
+  (boolean (seq (:unions maybe-union))))
+
 (defn- implements? [protocol atype]
   (and atype (.isAssignableFrom ^Class (:on-interface protocol) atype)))
 
@@ -532,7 +536,9 @@
   {:added "1.2"}
   [protocol atype]
   (boolean (or (implements? protocol atype) 
-               (get (:impls protocol) atype))))
+               (get (:impls protocol) atype)
+               (and (protocol-union? protocol)
+                    (every? #(extends? (deref %) atype))))))
 
 (defn extenders 
   "Returns a collection of the types explicitly extending protocol"
@@ -544,7 +550,9 @@
   "Returns true if x satisfies the protocol"
   {:added "1.2"}
   [protocol x]
-  (boolean (find-protocol-impl protocol x)))
+  (boolean (or (find-protocol-impl protocol x)
+               (and (protocol-union? protocol)
+                    (every? #(satisfies? (deref %) x) (:unions protocol))))))
 
 (defn -cache-protocol-fn [^clojure.lang.AFunction pf x ^Class c ^clojure.lang.IFn interf]
   (let [cache  (.__methodImplCache pf)
@@ -878,20 +886,13 @@
   extends?, satisfies?, extenders"
   {:added "1.2"} 
   [atype & proto+mmaps]
-  (let [named-protos (map first (partition 2 proto+mmaps))
-        exts (apply hash-map (mapcat (juxt identity :unions) named-protos))]
-    (doseq [proto named-protos
-            cont (map deref (:unions proto))
-            :when (protocol? proto)]
-      (when-not (or (extends? cont atype)
-                    (some #{cont} named-protos))
-        (throw (IllegalArgumentException.
-                (str "Protocol " (:var proto) " unions protocol " (:var cont) " which is not already extended to " atype "."
-                     " You must add definitions for " (:var cont) " to this extension."))))))
   (doseq [[proto mmap] (partition 2 proto+mmaps)]
     (when-not (protocol? proto)
       (throw (IllegalArgumentException.
               (str proto " is not a protocol"))))
+    (when (protocol-union? proto)
+      (throw (IllegalArgumentException.
+              (str (:var proto) " is a protocol union. Please extend with individual protocols instead."))))
     (when (implements? proto atype)
       (throw (IllegalArgumentException. 
               (str atype " already directly implements " (:on-interface proto) " for protocol:"  
@@ -954,9 +955,8 @@
 (defmacro extend-protocol 
   "Useful when you want to provide several implementations of the same
   protocol all at once. Takes a single protocol and the implementation
-  of that protocol for one or more types. Note that if this protocol
-  unions another, these types will already have to be extended by all
-  parent protocols. Expands into calls to extend-type:
+  of that protocol for one or more types. Expands into calls to
+  extend-type:
 
   (extend-protocol Protocol
     AType
