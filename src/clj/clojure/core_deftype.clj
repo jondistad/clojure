@@ -757,7 +757,12 @@
 
 (defmacro declare-protocol
   [pname]
-  `(declare ~(vary-meta pname assoc :protocol? true)))
+  `(do
+     (defonce ~pname {})
+     (gen-interface :name ~(symbol (qualify-classname pname)))
+     (alter-var-root (var ~pname) merge
+                     {:on '~(symbol (qualify-classname pname)) :on-interface ~(symbol (qualify-classname pname))})
+     '~pname))
 
 (defn- emit-wrap-interface
   [iface pname sigs]
@@ -799,7 +804,7 @@
           :let [pvar (resolve p)]]
     (when-not (and (var? pvar) (protocol? @pvar))
       (throw (IllegalArgumentException. (str p " is not a protocol.")))))
-  (emit-protocol pname {:unions (map resolve ps)} nil))
+  (emit-protocol pname {:unions (vec (map resolve ps))} nil))
 
 (defmacro union-protocols
   [pname & ps]
