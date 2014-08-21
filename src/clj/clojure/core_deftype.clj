@@ -629,6 +629,9 @@
 (def ^:private literal-tags
   (set (concat prim-tags array-tags)))
 
+(defn- qualify-classname [name]
+  (str (munge (namespace-munge *ns*)) "." (munge name)))
+
 (defn- resolve-tag [tag]
   (cond
    (nil? tag)
@@ -641,9 +644,12 @@
    tag
 
    (and (var? (resolve tag))
-        (or (protocol? @(resolve tag))
-            (:protocol? (meta (resolve tag)))))
+        (protocol? @(resolve tag)))
    (:on @(resolve tag))
+
+   (and (var? (resolve tag))
+        (:protocol? (meta (resolve tag))))
+   (symbol (qualify-classname tag))
 
    (symbol? tag)
    (symbol (.getName ^Class (resolve tag)))
@@ -669,9 +675,6 @@
       string? (recur (assoc opts :doc (first sigs)) (next sigs))
       keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))
       [opts sigs])))
-
-(defn- qualify-classname [name]
-  (str (munge (namespace-munge *ns*)) "." (munge name)))
 
 (defn- emit-protocol [name opts sigs]
   (let [iname (symbol (qualify-classname name))
@@ -754,7 +757,7 @@
 
 (defmacro declare-protocol
   [pname]
-  `(def ~(vary-meta pname assoc :protocol? true) {:on (symbol (qualify-classname))}))
+  `(declare ~(vary-meta pname assoc :protocol? true)))
 
 (defn- emit-wrap-interface
   [iface pname sigs]
