@@ -797,11 +797,8 @@
   (doseq [p ps
           :let [pvar (resolve p)]]
     (when-not (and (var? pvar) (protocol? @pvar))
-      (throw (IllegalArgumentException. (str p " is not a protocol."))))))
-
-(defmacro union-protocols
-  [pname & ps]
-  (emit-union-protocols pname ps))
+      (throw (IllegalArgumentException. (str p " is not a protocol.")))))
+  (emit-protocol pname {:unions (map resolve ps)} nil))
 
 (defmacro union-protocols
   [pname & ps]
