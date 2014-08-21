@@ -7,10 +7,10 @@
   (^{:tag boolean :on equiv} -equiv [o other]))
 
 (defprotocol ICollection
-  (^{:tag clojure.lang.ICollection :on cons} -conj [coll o]))
+  (^{:tag ICollection :on cons} -conj [coll o]))
 
 (defprotocol IEmptyableCollection
-  (^{:tag clojure.lang.IEmptyableCollection :on empty} -empty [coll]))
+  (^{:tag IEmptyableCollection :on empty} -empty [coll]))
 
 (defprotocol Counted
   (^{:tag clojure.lang.Counted :on count} -count [coll]))
