@@ -635,7 +635,7 @@
 (defn- resolve-tag [tag]
   (cond
    (nil? tag)
-   'java.lang.Object
+   nil
 
    (string? tag)
    tag
@@ -705,7 +705,7 @@
                         {} sigs))
         this-or-resolve #(if (= % 'this)
                            iname
-                           (resolve-tag %))
+                           (or (resolve-tag %) 'Object))
         meths (mapcat (fn [sig]
                         (let [m (munge (or (:on sig) (:name sig)))]
                           (map #(vector m
@@ -771,7 +771,7 @@
     (throw (IllegalArgumentException. (str iface " is not an interface."))))
   (let [^Class iface (resolve iface)
         name-sym #(-> % .getName symbol)
-        tag-sym (comp resolve-tag :tag meta)
+        tag-sym #(or (-> % meta :tag resolve-tag) 'java.lang.Object)
         type-map #(update-in %1 [(first %2)] conj (vec (rest %2)))
         imeths (reduce1 type-map
                         {}
