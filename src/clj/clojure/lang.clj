@@ -6,15 +6,10 @@
   (^{:on first} -first [_]))
 
 (defprotocol IRest
-  (^{:tag ISeq :on rest} -rest [_]))
+  (^{:tag ISeq :on more} -rest [_]))
 
 (defprotocol INext
   (^{:tag ISeq :on next} -next [_]))
-
-(union-protocols ISeq
-  IFirst
-  IRest
-  INext)
 
 (defprotocol Seqable
   (^{:tag ISeq :on seq} -seq [s]))
@@ -22,21 +17,29 @@
 (defprotocol IEquiv
   (^{:tag boolean :on equiv} -equiv [o other]))
 
-(defprotocol ICollection
-  (^{:tag this :on cons} -conj [coll o]))
+(declare-protocol IPersistentCollection)
+
+(defprotocol IConjoinable
+  (^{:tag IPersistentCollection :on cons} -conj [coll o]))
 
 (defprotocol IEmptyableCollection
-  (^{:tag this :on empty} -empty [coll]))
+  (^{:tag IPersistentCollection :on empty} -empty [coll]))
 
 (defprotocol Counted
-  (^{:tag this :on count} -count [coll]))
+  (^{:tag int :on count} -count [coll]))
 
 (union-protocols IPersistentCollection
   Seqable
   IEquiv
-  ICollection
+  IConjoinable
   IEmptyableCollection
   Counted)
+
+(union-protocols ISeq
+  IFirst
+  IRest
+  INext
+  IPersistentCollection)
 
 (defprotocol IMeta
   (^{:tag clojure.lang.IPersistentMap :on meta} -meta [_]))
@@ -79,8 +82,10 @@
   Counted
   IOrdinal)
 
+(declare-protocol IChunk)
+
 (defprotocol IChunked
-  (^{:tag this :on dropFirst} -drop-first [_])
+  (^{:tag IChunk :on dropFirst} -drop-first [_])
   (^{:on reduce} -chunk-reduce [_ ^clojure.lang.IFn f start]))
 
 (union-protocols IChunk
@@ -88,11 +93,11 @@
   Indexed)
 
 (defprotocol IChunkedFirst
-  (^{:tag clojure.lang.IChunked :on chunkedFirst} -chunked-first [_]))
+  (^{:tag IChunk :on chunkedFirst} -chunked-first [_]))
 
 (defprotocol IChunkedNext
-  (^{:tag clojure.lang.ISeq :on chunkedNext} -chunked-next [_])
-  (^{:tag clojure.lang.ISeq :on chunkedMore} -chunked-more [_]))
+  (^{:tag ISeq :on chunkedNext} -chunked-next [_])
+  (^{:tag ISeq :on chunkedMore} -chunked-rest [_]))
 
 (union-protocols IChunkedSeq
   ISeq
