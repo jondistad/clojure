@@ -674,7 +674,8 @@
       [opts sigs])))
 
 (defn- emit-protocol [name opts sigs]
-  (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
+  (let [fqname #(str (munge (namespace-munge *ns*)) "." (munge %))
+        iname (symbol (fqname name))
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
         {:keys [unions extends-interface]} opts
         sigs (when sigs
@@ -700,12 +701,20 @@
                                            :arglists arglists
                                            :doc doc}))))
                         {} sigs))
+        this-or-resolve (fn [tag]
+                          (or (and (symbol? tag)
+                                   (let [fqn (if (.contains (str tag) ".")
+                                               tag
+                                               (fqname tag))]
+                                     (= iname fqn))
+                                   iname)
+                              (resolve-tag tag)))
         meths (mapcat (fn [sig]
                         (let [m (munge (or (:on sig) (:name sig)))]
                           (map #(vector m
-                                        (vec (map (fn [a] (resolve-tag (:tag (meta a))))
+                                        (vec (map (fn [a] (this-or-resolve (:tag (meta a))))
                                                   (rest %)))
-                                        (resolve-tag (:tag sig)))
+                                        (this-or-resolve (:tag sig)))
                                (:arglists sig))))
                       (vals sigs))]
   `(do
