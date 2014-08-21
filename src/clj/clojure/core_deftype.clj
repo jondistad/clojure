@@ -613,15 +613,15 @@
                      (str "function " (.sym v)))))))))
 
 (def ^:private prim-to-box
-  {'int 'Integer
-   'long 'Long
-   'float 'Float
-   'double 'Double
-   'char 'Character
-   'short 'Short
-   'byte 'Byte
-   'boolean 'Boolean
-   'void 'Object})
+  {'int 'java.lang.Integer
+   'long 'java.lang.Long
+   'float 'java.lang.Float
+   'double 'java.lang.Double
+   'char 'java.lang.Character
+   'short 'java.lang.Short
+   'byte 'java.lang.Byte
+   'boolean 'java.lang.Boolean
+   'void 'java.lang.Object})
 (def ^:private prim-tags
   (set (keys prim-to-box)))
 (def ^:private array-tags
@@ -635,7 +635,7 @@
 (defn- resolve-tag [tag]
   (cond
    (nil? tag)
-   'Object
+   'java.lang.Object
 
    (string? tag)
    tag
