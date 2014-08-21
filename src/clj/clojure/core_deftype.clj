@@ -668,12 +668,7 @@
 (defn- emit-protocol [name opts sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
-        {:keys [continues extends-interface]} opts
-        continues (doall (for [cont-sym continues
-                               :let [cont-var (resolve cont-sym)]]
-                           (if (and (var? cont-var) (protocol? @cont-var))
-                             cont-var
-                             (throw (IllegalArgumentException. (str cont-sym " is not a protocol."))))))
+        {:keys [unions extends-interface]} opts
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
@@ -709,7 +704,7 @@
      (defonce ~name {})
      (gen-interface :name ~iname :methods ~meths
                     :extends [~@(when extends-interface (list extends-interface))
-                              ~@(map (comp :on-interface deref) continues)])
+                              ~@(map (comp :on-interface deref) unions)])
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      ~(when sigs
         `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
@@ -717,7 +712,7 @@
                      (assoc ~opts 
                        :sigs '~sigs 
                        :var (var ~name)
-                       :continues [~@continues]
+                       :unions [~@unions]
                        :extends-interface ~extends-interface
                        :method-map 
                          ~(and (:on opts)
@@ -778,6 +773,15 @@
   [iface pname & sigs]
   (emit-wrap-interface iface pname sigs))
 
+(defmacro union-protocols [pname & ps]
+  (when (< (count ps) 2)
+    (throw (IllegalArgumentException. "At least two protocols are required for a union.")))
+  (doseq [p ps
+          :let [pvar (resolve p)]]
+    (when-not (and (var? pvar) (protocol? @pvar))
+      (throw (IllegalArgumentException. (str p " is not a protocol.")))))
+  (emit-protocol pname {:unions ps} nil))
+
 (defmacro defprotocol 
   "A protocol is a named set of named methods and their signatures:
   (defprotocol AProtocolName
@@ -833,6 +837,8 @@
   (let [[opts sigs] (parse-protocol-opts+sigs opts+sigs)]
     (when (contains? opts :extends-interface)
       (throw (IllegalArgumentException. "Do not pass :extends-interface directly. Use wrap-interface instead.")))
+    (when (contains? opts :unions)
+      (throw (IllegalArgumentException. "Do not pass :unions directly. Use union-protocols instead.")))
     (emit-protocol name opts sigs)))
 
 (defn extend 
@@ -873,14 +879,14 @@
   {:added "1.2"} 
   [atype & proto+mmaps]
   (let [named-protos (map first (partition 2 proto+mmaps))
-        exts (apply hash-map (mapcat (juxt identity :continues) named-protos))]
+        exts (apply hash-map (mapcat (juxt identity :unions) named-protos))]
     (doseq [proto named-protos
-            cont (map deref (:continues proto))
+            cont (map deref (:unions proto))
             :when (protocol? proto)]
       (when-not (or (extends? cont atype)
                     (some #{cont} named-protos))
         (throw (IllegalArgumentException.
-                (str "Protocol " (:var proto) " continues protocol " (:var cont) " which is not already extended to " atype "."
+                (str "Protocol " (:var proto) " unions protocol " (:var cont) " which is not already extended to " atype "."
                      " You must add definitions for " (:var cont) " to this extension."))))))
   (doseq [[proto mmap] (partition 2 proto+mmaps)]
     (when-not (protocol? proto)
@@ -949,8 +955,8 @@
   "Useful when you want to provide several implementations of the same
   protocol all at once. Takes a single protocol and the implementation
   of that protocol for one or more types. Note that if this protocol
-  continues another, these types will already have to be extended by
-  all parent protocols. Expands into calls to extend-type:
+  unions another, these types will already have to be extended by all
+  parent protocols. Expands into calls to extend-type:
 
   (extend-protocol Protocol
     AType
