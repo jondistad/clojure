@@ -1,19 +1,35 @@
 (ns clojure.lang)
 
+(declare-protocol ISeq)
+
+(defprotocol IFirst
+  (^{:on first} -first [_]))
+
+(defprotocol IRest
+  (^{:tag ISeq :on rest} -rest [_]))
+
+(defprotocol INext
+  (^{:tag ISeq :on next} -next [_]))
+
+(union-protocols ISeq
+  IFirst
+  IRest
+  INext)
+
 (defprotocol Seqable
-  (^{:tag clojure.lang.Seqable :on seq} -seq [s]))
+  (^{:tag ISeq :on seq} -seq [s]))
 
 (defprotocol IEquiv
   (^{:tag boolean :on equiv} -equiv [o other]))
 
 (defprotocol ICollection
-  (^{:tag ICollection :on cons} -conj [coll o]))
+  (^{:tag this :on cons} -conj [coll o]))
 
 (defprotocol IEmptyableCollection
-  (^{:tag IEmptyableCollection :on empty} -empty [coll]))
+  (^{:tag this :on empty} -empty [coll]))
 
 (defprotocol Counted
-  (^{:tag clojure.lang.Counted :on count} -count [coll]))
+  (^{:tag this :on count} -count [coll]))
 
 (union-protocols IPersistentCollection
   Seqable
@@ -21,20 +37,6 @@
   ICollection
   IEmptyableCollection
   Counted)
-
-(defprotocol IFirst
-  (^{:on first} -first [_]))
-
-(defprotocol IRest
-  (^{:tag clojure.lang.ISeq :on rest} -rest [_]))
-
-(defprotocol INext
-  (^{:tag clojure.lang.ISeq :on next} -next [_]))
-
-(union-protocols ISeq
-  IFirst
-  IRest
-  INext)
 
 (defprotocol IMeta
   (^{:tag clojure.lang.IPersistentMap :on meta} -meta [_]))
