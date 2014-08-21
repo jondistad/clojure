@@ -754,7 +754,7 @@
 
 (defmacro declare-protocol
   [pname]
-  `(def ~(vary-meta pname assoc :protocol? true) {:on (symbol (qualify-classname))}))
+  (list 'def (vary-meta pname assoc :protocol? true) {:on (symbol (qualify-classname pname))}))
 
 (defn- emit-wrap-interface
   [iface pname sigs]
