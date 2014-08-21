@@ -797,7 +797,7 @@
           :let [pvar (resolve p)]]
     (when-not (and (var? pvar) (protocol? @pvar))
       (throw (IllegalArgumentException. (str p " is not a protocol.")))))
-  (emit-protocol pname {:unions ps} nil))
+  (emit-protocol pname {:unions (map resolve ps)} nil))
 
 (defmacro defprotocol 
   "A protocol is a named set of named methods and their signatures:
