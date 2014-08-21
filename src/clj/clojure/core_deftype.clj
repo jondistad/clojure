@@ -630,29 +630,26 @@
   (set (concat prim-tags array-tags)))
 
 (defn- resolve-tag [tag]
-  (if tag
-    (let [die (fn []
-                (throw (IllegalArgumentException. (str "Unable to resolve classname: " tag))))]
-      (cond
-       (literal-tags tag)
-       tag
+  (cond
+   (nil? tag)
+   'Object
 
-       (string? tag)
-       (try
-         (Class/forName tag)
-         (catch ClassNotFoundException e
-           (die)))
+   (string? tag)
+   tag
 
-       (class? (resolve tag))
-       (resolve tag)
+   (literal-tags tag)
+   tag
 
-       (and (var? (resolve tag))
-            (protocol? @(resolve tag)))
-       (:on-interface @(resolve tag))
+   (and (var? (resolve tag))
+        (or (protocol? @(resolve tag))
+            (:protocol? (meta (resolve tag)))))
+   (:on @(resolve tag))
 
-       :else
-       (die)))
-    Object))
+   (symbol? tag)
+   (symbol (.getName ^Class (resolve tag)))
+
+   :else
+   (throw (IllegalArgumentException. (str tag " is not a valid tag.")))))
 
 (defn- box-tag [tag]
   (or (prim-to-box tag) tag))
@@ -673,9 +670,11 @@
       keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))
       [opts sigs])))
 
+(defn- qualify-classname [name]
+  (str (munge (namespace-munge *ns*)) "." (munge name)))
+
 (defn- emit-protocol [name opts sigs]
-  (let [fqname #(str (munge (namespace-munge *ns*)) "." (munge %))
-        iname (symbol (fqname name))
+  (let [iname (symbol (qualify-classname name))
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
         {:keys [unions extends-interface]} opts
         sigs (when sigs
@@ -753,6 +752,10 @@
      (-reset-methods ~name)
      '~name)))
 
+(defmacro declare-protocol
+  [pname]
+  `(def ~(vary-meta pname assoc :protocol? true) {:on (symbol (qualify-classname))}))
+
 (defn- emit-wrap-interface
   [iface pname sigs]
   (when-not (and (class? (resolve iface))
@@ -760,7 +763,7 @@
     (throw (IllegalArgumentException. (str iface " is not an interface."))))
   (let [^Class iface (resolve iface)
         name-sym #(-> % .getName symbol)
-        tag-sym (comp name-sym resolve-tag :tag meta)
+        tag-sym (comp resolve-tag :tag meta)
         type-map #(update-in %1 [(first %2)] conj (vec (rest %2)))
         imeths (reduce1 type-map
                         {}
