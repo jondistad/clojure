@@ -701,14 +701,9 @@
                                            :arglists arglists
                                            :doc doc}))))
                         {} sigs))
-        this-or-resolve (fn [tag]
-                          (or (and (symbol? tag)
-                                   (let [fqn (if (.contains (str tag) ".")
-                                               tag
-                                               (fqname tag))]
-                                     (= iname fqn))
-                                   iname)
-                              (resolve-tag tag)))
+        this-or-resolve #(if (= % 'this)
+                           iname
+                           (resolve-tag %))
         meths (mapcat (fn [sig]
                         (let [m (munge (or (:on sig) (:name sig)))]
                           (map #(vector m
