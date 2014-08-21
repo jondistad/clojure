@@ -790,7 +790,8 @@
   [iface pname & sigs]
   (emit-wrap-interface iface pname sigs))
 
-(defmacro union-protocols [pname & ps]
+(defn- emit-union-protocols
+  [pname ps]
   (when (< (count ps) 2)
     (throw (IllegalArgumentException. "At least two protocols are required for a union.")))
   (doseq [p ps
@@ -798,6 +799,10 @@
     (when-not (and (var? pvar) (protocol? @pvar))
       (throw (IllegalArgumentException. (str p " is not a protocol.")))))
   (emit-protocol pname {:unions (map resolve ps)} nil))
+
+(defmacro union-protocols
+  [pname & ps]
+  (emit-union-protocols pname ps))
 
 (defmacro defprotocol 
   "A protocol is a named set of named methods and their signatures:
