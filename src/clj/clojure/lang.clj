@@ -243,6 +243,15 @@
 
 (defprotocol IType)
 (defprotocol IRecord)
+(defprotocol MapEquivalence)
+
+(defprotocol Named
+  (^{:tag String :on getNamespace} -namespace [_])
+  (^{:tag String :on getName} -name [_]))
+
+(defprotocol Settable
+  (^{:on doSet} -set! [_ val])
+  (^{:on doReset} -reset! [_ val]))
 
 (defprotocol IReduce
   (^{:on reduce} -reduce [_ ^clojure.lang.IFn f] [_ ^clojure.lang.IFn f start]))
