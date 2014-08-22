@@ -41,11 +41,14 @@
   INext
   IPersistentCollection)
 
+(declare-protocol IObj)
+(declare-protocol IPersistentMap)
+
 (defprotocol IMeta
-  (^{:tag clojure.lang.IPersistentMap :on meta} -meta [_]))
+  (^{:tag IPersistentMap :on meta} -meta [_]))
 
 (defprotocol IWithMeta
-  (^{:tag clojure.lang.IObj :on withMeta} -with-meta [_ ^clojure.lang.IPersistentMap m]))
+  (^{:tag IObj :on withMeta} -with-meta [_ ^IPersistentMap m]))
 
 (union-protocols IObj
   IMeta
@@ -54,10 +57,12 @@
 (defprotocol ILookup
   (^{:on valAt} -val-at [_ o] [_ o not-found]))
 
+(declare-protocol Associative)
+
 (defprotocol IAssociative
   (^{:tag boolean :on containsKey} -contains-key? [_ k])
-  (^{:tag clojure.lang.IMapEntry :on entryAt} -entry-at [_ k])
-  (^{:tag clojure.lang.Associative :on assoc} -assoc [_ k v]))
+  (^{:tag IMapEntry :on entryAt} -entry-at [_ k])
+  (^{:tag Associative :on assoc} -assoc [_ k v]))
 
 (union-protocols Associative
   IPersistentCollection
@@ -109,7 +114,7 @@
   (^{:tag clojure.lang.ITransientCollection :on asTransient} -transient [_]))
 
 (defprotocol IExceptionInfo
-  (^{:tag clojure.lang.IPersistentMap :on getData} -get-data [_]))
+  (^{:tag IPersistentMap :on getData} -get-data [_]))
 
 (defprotocol IHashEq
   (^{:tag int :on hasheq} -hasheq [_]))
@@ -117,9 +122,9 @@
 (defprotocol ILookupThunk
   (^{:on get} -lookup-thunk-get [_ o]))
 (defprotocol IKeywordLookup
-  (^{:tag clojure.lang.ILookupThunk :on getLookupThunk} -get-lookup-thunk [_ ^clojure.lang.Keyword k]))
+  (^{:tag ILookupThunk :on getLookupThunk} -get-lookup-thunk [_ ^clojure.lang.Keyword k]))
 (defprotocol ILookupSite
-  (^{:tag clojure.lang.ILookupThunk :on fault} -fault [_ target]))
+  (^{:tag ILookupThunk :on fault} -fault [_ target]))
 
 (defprotocol Fn)
 
@@ -133,9 +138,9 @@
   (^{:tag boolean :on isRealized} -realized? [_]))
 
 (defprotocol IProxy
-  (^{:tag void :on __initClojureFnMappings} -init-clojure-fn-mappings! [_ ^clojure.lang.IPersistentMap m])
-  (^{:tag void :on __updateClojureFnMappings} -update-clojure-fn-mappings! [_ ^clojure.lang.IPersistentMap m])
-  (^{:tag clojure.lang.IPersistentMap :on __getClojureFnMappings} -clojure-fn-mappings [_]))
+  (^{:tag void :on __initClojureFnMappings} -init-clojure-fn-mappings! [_ ^IPersistentMap m])
+  (^{:tag void :on __updateClojureFnMappings} -update-clojure-fn-mappings! [_ ^IPersistentMap m])
+  (^{:tag IPersistentMap :on __getClojureFnMappings} -clojure-fn-mappings [_]))
 
 (wrap-interface java.util.Map$Entry
   JavaMapEntry
@@ -153,6 +158,34 @@
   IKeyed
   IValued
   JavaMapEntry)
+
+(declare-protocol IPersistentStack)
+
+(defprotocol IStack
+  (^{:on peek} -peek [_])
+  (^{:tag IPersistentStack :on pop} -pop [_]))
+
+(union-protocols IPersistentStack
+  IStack
+  IPersistentCollection)
+
+(union-protocols IPersistentList
+  Sequential
+  IPersistentStack)
+
+(defprotocol IMap
+  (^{:tag IPersistentMap :on assocEx} -assoc-ex [_ k v])
+  (^{:tag IPersistentMap :on without} -dissoc [_ k]))
+
+(wrap-interface Iterable
+  JavaIterable
+  (^{:tag java.lang.Iterator :on iterator} -iterator [_]))
+
+(union-protocols IPersistentMap
+  IMap
+  JavaIterable
+  Associative
+  Counted)
 
 (comment
 
