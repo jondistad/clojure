@@ -176,6 +176,7 @@
   IPersistentStack)
 
 (defprotocol IMap
+  (^{:tag IPersistentMap :on assoc} -map-assoc [_ k v])
   (^{:tag IPersistentMap :on assocEx} -assoc-ex [_ k v])
   (^{:tag IPersistentMap :on without} -dissoc [_ k]))
 
