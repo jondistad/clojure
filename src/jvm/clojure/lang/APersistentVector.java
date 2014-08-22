@@ -409,10 +409,6 @@ public boolean contains(Object o){
 	return false;
 }
 
-public int length(){
-	return count();
-}
-
 public int compareTo(Object o){
 	IPersistentVector v = (IPersistentVector) o;
 	if(count() < v.count())

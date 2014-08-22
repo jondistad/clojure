@@ -185,10 +185,38 @@
   (^{:tag java.util.Iterator :on iterator} -iterator [_]))
 
 (union-protocols IPersistentMap
-  IMap
   JavaIterable
   Associative
-  Counted)
+  Counted
+  IMap)
+
+(declare-protocol IPersistentSet)
+
+(defprotocol ISet
+  (^{:tag IPersistentSet :on disjoin} -disjoin [_ k])
+  (^{:tag boolean :on contains} -contains [_ k])
+  (^{:on get} -get [_ k]))
+
+(union-protocols IPersistentSet
+  Counted
+  ISet)
+
+(defprotocol Reversible
+  (^{:tag ISeq :on rseq} -rseq [_]))
+
+(declare-protocol IPersistentVector)
+
+(defprotocol IVector
+  (^{:tag IPersistentVector :on assocN} -assoc-n [_ ^int i val])
+  (^{:tag IPersistentVector :on cons} -vec-conj [_ o]))
+
+(union-protocols IPersistentVector
+  Associative
+  Sequential
+  IPersistentStack
+  Reversible
+  Indexed
+  IVector)
 
 (comment
 
