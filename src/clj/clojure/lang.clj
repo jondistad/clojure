@@ -257,6 +257,7 @@
 
 (union-protocols ITransientAssociative
   ITransientCollection
+  ILookup
   ITransientAssoc)
 
 (comment
