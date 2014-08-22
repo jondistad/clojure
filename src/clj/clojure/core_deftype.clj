@@ -680,6 +680,12 @@
   (let [iname (symbol (qualify-classname name))
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
         {:keys [unions extends-interface]} opts
+        replace-this (fn replace-this
+                       ([tag] (replace-this tag (constantly tag)))
+                       ([tag else-thunk]
+                          (if (= 'this tag)
+                            iname
+                            (else-thunk))))
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
@@ -688,7 +694,12 @@
                                 [arglists doc]
                                 (loop [as [] rs (rest s)]
                                   (if (vector? (first rs))
-                                    (recur (conj as (vary-meta (first rs) assoc-some :tag ret-tag))
+                                    (recur (conj as (with-meta
+                                                      (vec (map #(with-meta %
+                                                                   (assoc-some (meta %)
+                                                                               :tag (-> % meta :tag replace-this)))
+                                                                (first rs)))
+                                                      (assoc-some (meta (first rs)) :tag (replace-this ret-tag))))
                                            (next rs))
                                     [(seq as) (first rs)]))]
                             (when (some #{0} (map count arglists))
@@ -703,9 +714,7 @@
                                            :arglists arglists
                                            :doc doc}))))
                         {} sigs))
-        this-or-resolve #(if (= % 'this)
-                           iname
-                           (or (resolve-tag %) 'Object))
+        this-or-resolve (fn [tag] (replace-this tag #(or (resolve-tag tag) 'Object)))
         meths (mapcat (fn [sig]
                         (let [m (munge (or (:on sig) (:name sig)))]
                           (map #(vector m
