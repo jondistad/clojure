@@ -246,6 +246,19 @@
 (defprotocol IReduce
   (^{:on reduce} -reduce [_ ^clojure.lang.IFn f] [_ ^clojure.lang.IFn f start]))
 
+(defprotocol ITransientCollection
+  (^{:tag this :on conj} -conj! [_ o])
+  (^{:tag IPersistentCollection :on persistent} -persistent [_]))
+
+(declare-protocol ITransientAssociative)
+
+(defprotocol ITransientAssoc
+  (^{:tag ITransientAssociative :on assoc} -assoc! [_ k v]))
+
+(union-protocols ITransientAssociative
+  ITransientCollection
+  ITransientAssoc)
+
 (comment
 
  (defprotocol Fn
