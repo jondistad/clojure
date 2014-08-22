@@ -135,6 +135,28 @@
 (defprotocol IBlockingDeref
   (^{:on deref} -blocking-deref [_ ^long ms timeout]))
 
+(declare-protocol IRef)
+(defprotocol IValidated
+  (^{:tag void :on setValidator} -set-validator! [_ ^clojure.lang.IFn vf])
+  (^{:tag clojure.lang.IFn :on getValidator} -validator [_]))
+(defprotocol IWatched
+  (^{:tag IPersistentMap :on getWatches} -watches [_])
+  (^{:tag IRef :on addWatch} -add-watch! [_ key ^clojure.lang.IFn callback])
+  (^{:tag IRef :on removeWatch} -remove-watch! [_ key]))
+
+(union-protocols IRef
+  IDeref
+  IValidated
+  IWatched)
+
+(defprotocol IRefMeta
+  (^{:tag IPersistentMap :on alterMeta} -alter-meta! [_ ^clojure.lang.IFn alter ^ISeq args])
+  (^{:tag IPersistentMap :on resetMeta} -reset-meta! [_ ^IPersistentMap m]))
+
+(union-protocols IReference
+  IMeta
+  IRefMeta)
+
 (defprotocol IPending
   (^{:tag boolean :on isRealized} -realized? [_]))
 
@@ -218,6 +240,11 @@
   Reversible
   Indexed
   IVector)
+
+(defprotocol IRecord)
+
+(defprotocol IReduce
+  (^{:on reduce} -reduce [_ ^clojure.lang.IFn f] [_ ^clojure.lang.IFn f start]))
 
 (comment
 
