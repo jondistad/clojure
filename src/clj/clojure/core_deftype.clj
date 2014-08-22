@@ -680,12 +680,7 @@
   (let [iname (symbol (qualify-classname name))
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
         {:keys [unions extends-interface]} opts
-        replace-this (fn replace-this
-                       ([tag] (replace-this tag (constantly tag)))
-                       ([tag else-thunk]
-                          (if (= 'this tag)
-                            iname
-                            (else-thunk))))
+        replace-this (fn [tag] (if (= 'this tag) iname tag))
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
@@ -714,7 +709,9 @@
                                            :arglists arglists
                                            :doc doc}))))
                         {} sigs))
-        this-or-resolve (fn [tag] (replace-this tag #(or (resolve-tag tag) 'Object)))
+        this-or-resolve (fn [tag] (if (= tag iname)
+                                    tag
+                                    (or (resolve-tag tag) 'Object)))
         meths (mapcat (fn [sig]
                         (let [m (munge (or (:on sig) (:name sig)))]
                           (map #(vector m
