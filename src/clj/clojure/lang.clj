@@ -241,6 +241,7 @@
   Indexed
   IVector)
 
+(defprotocol IType)
 (defprotocol IRecord)
 
 (defprotocol IReduce
@@ -287,6 +288,17 @@
   Counted
   ISet
   ITransientDisjoin)
+
+(declare-protocol ITransientVector)
+
+(defprotocol ITransientVec
+  (^{:tag ITransientVector :on assocN} -assoc-n! [_ ^int i val])
+  (^{:tag ITransientVector :on pop} -pop! [_]))
+
+(union-protocols ITransientVector
+  ITransientAssociative
+  Indexed
+  ITransientVec)
 
 (comment
 
