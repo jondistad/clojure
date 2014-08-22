@@ -199,6 +199,7 @@
 
 (union-protocols IPersistentSet
   Counted
+  IPersistentCollection
   ISet)
 
 (defprotocol Reversible

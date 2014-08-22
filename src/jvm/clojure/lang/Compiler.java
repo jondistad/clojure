@@ -3007,7 +3007,7 @@ public static class MapExpr implements Expr{
 			if(valsConstant)
 				{
 				IPersistentMap m = PersistentHashMap.EMPTY;
-				for(int i=0;i<keyvals.length();i+= 2)
+				for(int i=0;i<keyvals.count();i+= 2)
 					{
 					m = m.assoc(((LiteralExpr)keyvals.nth(i)).val(), ((LiteralExpr)keyvals.nth(i+1)).val());
 					}
