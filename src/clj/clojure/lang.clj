@@ -212,14 +212,17 @@
 (declare-protocol IPersistentSet)
 
 (defprotocol ISet
-  (^{:tag IPersistentSet :on disjoin} -disjoin [_ k])
   (^{:tag boolean :on contains} -contains [_ k])
   (^{:on get} -get [_ k]))
+
+(defprotocol IPersistentDisjoin
+  (^{:tag IPersistentSet :on disjoin} -disjoin [_ k]))
 
 (union-protocols IPersistentSet
   Counted
   IPersistentCollection
-  ISet)
+  ISet
+  IPersistentDisjoin)
 
 (defprotocol Reversible
   (^{:tag ISeq :on rseq} -rseq [_]))
@@ -259,6 +262,31 @@
   ITransientCollection
   ILookup
   ITransientAssoc)
+
+(declare-protocol ITransientMap)
+
+(defprotocol ITransientMapAssoc
+  (^{:tag ITransientMap :on assoc} -map-assoc! [_ k v])
+  (^{:tag ITransientMap :on without} -map-dissoc! [_ k]))
+(defprotocol ITransientMapPersist
+  (^{:tag IPersistentMap :on persistent} -map-persistent! [_]))
+
+(union-protocols ITransientMap
+  ITransientAssociative
+  Counted
+  ITransientMapAssoc
+  ITransientMapPersist)
+
+(declare-protocol ITransientSet)
+
+(defprotocol ITransientDisjoin
+  (^{:tag ITransientSet :on disjoin} -disjoin! [_ k]))
+
+(union-protocols ITransientSet
+  ITransientCollection
+  Counted
+  ISet
+  ITransientDisjoin)
 
 (comment
 
