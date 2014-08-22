@@ -253,6 +253,12 @@
   (^{:on doSet} -set! [_ val])
   (^{:on doReset} -reset! [_ val]))
 
+(defprotocol Sorted
+  (^{:tag java.util.Comparator :on comparator} -comparator [_])
+  (^{:on entryKey} -entry-key [_ entry])
+  (^{:tag ISeq :on seq} -sorted-seq [_ ^boolean ascending])
+  (^{:tag ISeq :on seqFrom} -sorted-seq-from [_ key ^boolean ascending]))
+
 (defprotocol IReduce
   (^{:on reduce} -reduce [_ ^clojure.lang.IFn f] [_ ^clojure.lang.IFn f start]))
 
