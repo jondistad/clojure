@@ -111,9 +111,6 @@
   IChunkedFirst
   IChunkedNext)
 
-(defprotocol IEditableCollection
-  (^{:tag clojure.lang.ITransientCollection :on asTransient} -transient [_]))
-
 (defprotocol IExceptionInfo
   (^{:tag IPersistentMap :on getData} -get-data [_]))
 
@@ -248,7 +245,10 @@
 
 (defprotocol ITransientCollection
   (^{:tag this :on conj} -conj! [_ o])
-  (^{:tag IPersistentCollection :on persistent} -persistent [_]))
+  (^{:tag IPersistentCollection :on persistent} -persistent! [_]))
+
+(defprotocol IEditableCollection
+  (^{:tag ITransientCollection :on asTransient} -as-transient [_]))
 
 (declare-protocol ITransientAssociative)
 
