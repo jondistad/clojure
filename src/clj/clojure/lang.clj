@@ -58,6 +58,7 @@
   (^{:on valAt} -val-at [_ o] [_ o not-found]))
 
 (declare-protocol Associative)
+(declare-protocol IMapEntry)
 
 (defprotocol IAssociative
   (^{:tag boolean :on containsKey} -contains-key? [_ k])
@@ -154,6 +155,7 @@
   (^{:on key} -key [_]))
 (defprotocol IValued
   (^{:on val} -val [_]))
+
 (union-protocols IMapEntry
   IKeyed
   IValued
@@ -179,7 +181,7 @@
 
 (wrap-interface Iterable
   JavaIterable
-  (^{:tag java.lang.Iterator :on iterator} -iterator [_]))
+  (^{:tag java.util.Iterator :on iterator} -iterator [_]))
 
 (union-protocols IPersistentMap
   IMap
