@@ -704,14 +704,15 @@
                             (when (m (keyword mname))
                               (throw (IllegalArgumentException. (str "Function " mname " in protocol " name " was redefined. Specify all arities in single definition."))))
                             (assoc m (keyword mname)
-                                   (merge name-meta
-                                          {:name (vary-meta mname assoc :doc doc :arglists arglists)
-                                           :arglists arglists
-                                           :doc doc}))))
+                                   (assoc-some name-meta
+                                               :tag (replace-this ret-tag)
+                                               :name (vary-meta mname assoc :doc doc :arglists arglists)
+                                               :arglists arglists
+                                               :doc doc))))
                         {} sigs))
         this-or-resolve (fn [tag] (if (= tag iname)
-                                    tag
-                                    (or (resolve-tag tag) 'Object)))
+                                       tag
+                                       (or (resolve-tag tag) 'Object)))
         meths (mapcat (fn [sig]
                         (let [m (munge (or (:on sig) (:name sig)))]
                           (map #(vector m
