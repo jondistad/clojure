@@ -677,9 +677,11 @@
       [opts sigs])))
 
 (defn- emit-protocol [name opts sigs]
-  (let [iname (symbol (qualify-classname name))
+  (let [{:keys [unions wraps-interface]} opts
+        iname (if wraps-interface
+                (symbol (.getName wraps-interface))
+                (symbol (qualify-classname name)))
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
-        {:keys [unions extends-interface]} opts
         replace-this (fn [tag] (if (= 'this tag) iname tag))
         sigs (when sigs
                (reduce1 (fn [m s]
@@ -713,19 +715,20 @@
         this-or-resolve (fn [tag] (if (= tag iname)
                                        tag
                                        (or (resolve-tag tag) 'Object)))
-        meths (mapcat (fn [sig]
-                        (let [m (munge (or (:on sig) (:name sig)))]
-                          (map #(vector m
-                                        (vec (map (fn [a] (this-or-resolve (:tag (meta a))))
-                                                  (rest %)))
-                                        (this-or-resolve (:tag sig)))
-                               (:arglists sig))))
-                      (vals sigs))]
+        meths (when-not wraps-interface
+                (mapcat (fn [sig]
+                          (let [m (munge (or (:on sig) (:name sig)))]
+                            (map #(vector m
+                                          (vec (map (fn [a] (this-or-resolve (:tag (meta a))))
+                                                    (rest %)))
+                                          (this-or-resolve (:tag sig)))
+                                 (:arglists sig))))
+                        (vals sigs)))]
   `(do
      (defonce ~name {})
-     (gen-interface :name ~iname :methods ~meths
-                    :extends [~@(when extends-interface (list extends-interface))
-                              ~@(map (comp :on-interface deref) unions)])
+     ~(when-not wraps-interface
+        `(gen-interface :name ~iname :methods ~meths
+                        :extends [~@(map (comp :on-interface deref) unions)]))
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      ~(when sigs
         `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
@@ -734,7 +737,6 @@
                        :sigs '~sigs 
                        :var (var ~name)
                        :unions [~@unions]
-                       :extends-interface ~extends-interface
                        :method-map 
                          ~(and (:on opts)
                                (apply hash-map 
@@ -797,7 +799,7 @@
                                       als))))]
     (when (not= imeths pmeths)
       (throw (IllegalArgumentException. "Signatures do not match interface.")))
-    (emit-protocol pname {:extends-interface iface} sigs)))
+    (emit-protocol pname {:wraps-interface iface} sigs)))
 
 (defmacro wrap-interface
   [iface pname & sigs]
@@ -870,8 +872,8 @@
   {:added "1.2"} 
   [name & opts+sigs]
   (let [[opts sigs] (parse-protocol-opts+sigs opts+sigs)]
-    (when (contains? opts :extends-interface)
-      (throw (IllegalArgumentException. "Do not pass :extends-interface directly. Use wrap-interface instead.")))
+    (when (contains? opts :wraps-interface)
+      (throw (IllegalArgumentException. "Do not pass :wraps-interface directly. Use wrap-interface instead.")))
     (when (contains? opts :unions)
       (throw (IllegalArgumentException. "Do not pass :unions directly. Use union-protocols instead.")))
     (emit-protocol name opts sigs)))
