@@ -467,7 +467,15 @@
   (let [gname name
         [interfaces methods opts] (parse-opts+specs opts+specs)
         {defaults :defaults} opts
-        fields (into1 fields (mapcat :fields defaults))
+        defaults (for [d defaults]
+                   (if (and (var? (resolve d))
+                            (:methods @(resolve d)))
+                     @(resolve d)
+                     (throw (IllegalArgumentException. (str d " does not have default implementations.")))))
+        _ (doseq [d defaults
+                  f (:fields d)]
+            (when-not (some #{f} fields)
+              (throw (IllegalArgumentException. (str "Default " (:var d) " requires fields " (:fields d))))))
         interfaces (into1 interfaces (map :on defaults))
         marities (reduce1 #(update-in %1 [(first %2)] conj (count (second %2)))
                           {}
@@ -502,7 +510,8 @@
        (alter-var-root (var ~name) merge
                        {:on '~iname
                         :methods [~@methods]
-                        :fields [~@fields]})
+                        :fields [~@fields]
+                        :var (var ~name)})
        '~name)))
 
 ;;;;;;;;;;;;;;;;;;;;;;; protocols ;;;;;;;;;;;;;;;;;;;;;;;;
