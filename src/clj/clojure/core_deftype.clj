@@ -677,9 +677,9 @@
       [opts sigs])))
 
 (defn- emit-protocol [name opts sigs]
-  (let [{:keys [unions extends-interface]} opts
-        iname (if extends-interface
-                (symbol (.getName extends-interface))
+  (let [{:keys [unions wraps-interface]} opts
+        iname (if wraps-interface
+                (symbol (.getName wraps-interface))
                 (symbol (qualify-classname name)))
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
         replace-this (fn [tag] (if (= 'this tag) iname tag))
@@ -725,7 +725,7 @@
                       (vals sigs))]
   `(do
      (defonce ~name {})
-     ~(when-not extends-interface
+     ~(when-not wraps-interface
         `(gen-interface :name ~iname :methods ~meths
                         :extends [~@(map (comp :on-interface deref) unions)]))
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
@@ -798,7 +798,7 @@
                                       als))))]
     (when (not= imeths pmeths)
       (throw (IllegalArgumentException. "Signatures do not match interface.")))
-    (emit-protocol pname {:extends-interface iface} sigs)))
+    (emit-protocol pname {:wraps-interface iface} sigs)))
 
 (defmacro wrap-interface
   [iface pname & sigs]
@@ -871,8 +871,8 @@
   {:added "1.2"} 
   [name & opts+sigs]
   (let [[opts sigs] (parse-protocol-opts+sigs opts+sigs)]
-    (when (contains? opts :extends-interface)
-      (throw (IllegalArgumentException. "Do not pass :extends-interface directly. Use wrap-interface instead.")))
+    (when (contains? opts :wraps-interface)
+      (throw (IllegalArgumentException. "Do not pass :wraps-interface directly. Use wrap-interface instead.")))
     (when (contains? opts :unions)
       (throw (IllegalArgumentException. "Do not pass :unions directly. Use union-protocols instead.")))
     (emit-protocol name opts sigs)))
