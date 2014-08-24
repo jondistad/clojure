@@ -76,7 +76,7 @@
                                 (cons (remap-protocol-methodname iface name)
                                       (maybe-destructured params body)))
                               meths)))]
-    (when-let [bad-opts (seq (remove #{:no-print} (keys opts)))]
+    (when-let [bad-opts (seq (remove #{:no-print :defaults} (keys opts)))]
       (throw (IllegalArgumentException. (apply print-str "Unsupported option(s) -" bad-opts))))
     [interfaces methods opts]))
 
@@ -466,6 +466,20 @@
   (validate-fields fields)
   (let [gname name
         [interfaces methods opts] (parse-opts+specs opts+specs)
+        {defaults :defaults} opts
+        fields (into1 fields (mapcat :fields defaults))
+        interfaces (into1 interfaces (map :on defaults))
+        marities (reduce1 #(update-in %1 [(first %2)] conj (count (second %2)))
+                          {}
+                          methods)
+        methods (loop [meths methods
+                       defs defaults]
+                  (if (seq defs)
+                    (let [ms (remove (fn [[name args & body]]
+                                       (some #{(count args)} (marities name)))
+                                     (:methods (first defs)))]
+                      (recur (into1 meths ms) (rest defs)))
+                    [fs ifaces meths]))
         ns-part (namespace-munge *ns*)
         classname (symbol (str ns-part "." gname))
         hinted-fields fields
@@ -476,6 +490,20 @@
        (import ~classname)
        ~(build-positional-factory gname classname fields)
        ~classname)))
+
+(defmacro deftype-defaults
+  [name fields & opts+specs]
+  (let [[interfaces methods opts] (parse-opts+specs opts+specs)
+        iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
+        meths (map (fn [m] ))]
+    `(do
+       (defonce ~name {})
+       (gen-interface :name ~iname :extends [~@interfaces])
+       (alter-var-root (var ~name) merge
+                       {:on '~iname
+                        :methods [~@methods]
+                        :fields [~@fields]})
+       '~name)))
 
 ;;;;;;;;;;;;;;;;;;;;;;; protocols ;;;;;;;;;;;;;;;;;;;;;;;;
 
