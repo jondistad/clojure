@@ -476,7 +476,7 @@
                   f (:fields d)]
             (when-not (some #{f} fields)
               (throw (IllegalArgumentException. (str "Default " (:var d) " requires fields " (:fields d))))))
-        interfaces (into1 interfaces (map :on defaults))
+        interfaces (into1 (set interfaces) (map :on defaults))
         marities (reduce1 #(update-in %1 [(first %2)] conj (count (second %2)))
                           {}
                           methods)
@@ -487,7 +487,7 @@
                                        (some #{(count args)} (marities name)))
                                      (:methods (first defs)))]
                       (recur (into1 meths ms) (rest defs)))
-                    [fs ifaces meths]))
+                    meths))
         ns-part (namespace-munge *ns*)
         classname (symbol (str ns-part "." gname))
         hinted-fields fields
@@ -502,15 +502,14 @@
 (defmacro deftype-defaults
   [name fields & opts+specs]
   (let [[interfaces methods opts] (parse-opts+specs opts+specs)
-        iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
-        meths (map (fn [m] ))]
+        iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))]
     `(do
        (defonce ~name {})
        (gen-interface :name ~iname :extends [~@interfaces])
        (alter-var-root (var ~name) merge
                        {:on '~iname
-                        :methods [~@methods]
-                        :fields [~@fields]
+                        :methods '[~@methods]
+                        :fields '[~@fields]
                         :var (var ~name)})
        '~name)))
 
