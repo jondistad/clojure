@@ -677,9 +677,11 @@
       [opts sigs])))
 
 (defn- emit-protocol [name opts sigs]
-  (let [iname (symbol (qualify-classname name))
+  (let [{:keys [unions extends-interface]} opts
+        iname (if extends-interface
+                (symbol (.getName extends-interface))
+                (symbol (qualify-classname name)))
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
-        {:keys [unions extends-interface]} opts
         replace-this (fn [tag] (if (= 'this tag) iname tag))
         sigs (when sigs
                (reduce1 (fn [m s]
@@ -723,9 +725,9 @@
                       (vals sigs))]
   `(do
      (defonce ~name {})
-     (gen-interface :name ~iname :methods ~meths
-                    :extends [~@(when extends-interface (list extends-interface))
-                              ~@(map (comp :on-interface deref) unions)])
+     ~(when-not extends-interface
+        `(gen-interface :name ~iname :methods ~meths
+                        :extends [~@(map (comp :on-interface deref) unions)]))
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      ~(when sigs
         `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
@@ -734,7 +736,6 @@
                        :sigs '~sigs 
                        :var (var ~name)
                        :unions [~@unions]
-                       :extends-interface ~extends-interface
                        :method-map 
                          ~(and (:on opts)
                                (apply hash-map 
