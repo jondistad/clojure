@@ -314,3 +314,23 @@
   ITransientAssociative
   Indexed
   ITransientVec)
+
+;; Abstract Classes
+
+(in-ns 'clojure.core)
+
+
+
+(in-ns 'clojure.lang)
+
+(deftype-defaults Obj [_meta]
+  Serializable
+  IObj
+  (-meta [o] _meta))
+
+
+
+(def Obj-defaults
+  (let [meta-sym '^IPersistentMap _meta]
+    {:members [meta-sym]
+     :methods {:meta `([_] ~meta-sym)}}))
