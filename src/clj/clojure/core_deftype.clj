@@ -715,14 +715,15 @@
         this-or-resolve (fn [tag] (if (= tag iname)
                                        tag
                                        (or (resolve-tag tag) 'Object)))
-        meths (mapcat (fn [sig]
-                        (let [m (munge (or (:on sig) (:name sig)))]
-                          (map #(vector m
-                                        (vec (map (fn [a] (this-or-resolve (:tag (meta a))))
-                                                  (rest %)))
-                                        (this-or-resolve (:tag sig)))
-                               (:arglists sig))))
-                      (vals sigs))]
+        meths (when-not wraps-interface
+                (mapcat (fn [sig]
+                          (let [m (munge (or (:on sig) (:name sig)))]
+                            (map #(vector m
+                                          (vec (map (fn [a] (this-or-resolve (:tag (meta a))))
+                                                    (rest %)))
+                                          (this-or-resolve (:tag sig)))
+                                 (:arglists sig))))
+                        (vals sigs)))]
   `(do
      (defonce ~name {})
      ~(when-not wraps-interface
