@@ -694,7 +694,7 @@
       [opts sigs])))
 
 (defn- emit-protocol [name opts sigs]
-  (let [{:keys [unions wraps-interface]} opts
+  (let [{:keys [unions ^Class wraps-interface]} opts
         iname (if wraps-interface
                 (symbol (.getName wraps-interface))
                 (symbol (qualify-classname name)))
