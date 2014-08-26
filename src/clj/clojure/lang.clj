@@ -317,20 +317,24 @@
 
 ;; Abstract Classes
 
-(in-ns 'clojure.core)
+(wrap-interface java.io.Serializable
+  JavaSerializable)
 
-
-
-(in-ns 'clojure.lang)
-
-(deftype-defaults Obj [_meta]
-  Serializable
+(union-protocols Obj
   IObj
-  (-meta [o] _meta))
+  JavaSerializable)
 
+(defmacro add-protocol-defaults
+  [name fields & methods]
+  (when-not (and (var? (resolve name))
+                 (:on-interface @(resolve name)))
+    (throw (IllegalArgumentException. (str name " is not a protocol."))))
+  (when-not (vector? fields)
+    (throw (IllegalArgumentException. "Fields must be a vector.")))
+  `(alter-var-root (var ~name) assoc
+                   :default-fields '[~@fields]
+                   :default-methods [~@methods]))
+(defmacro deftype-ext
+  [name fields & opts+sigs]
+  )
 
-
-(def Obj-defaults
-  (let [meta-sym '^IPersistentMap _meta]
-    {:members [meta-sym]
-     :methods {:meta `([_] ~meta-sym)}}))
