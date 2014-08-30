@@ -76,7 +76,7 @@
                                 (cons (remap-protocol-methodname iface name)
                                       (maybe-destructured params body)))
                               meths)))]
-    (when-let [bad-opts (seq (remove #{:no-print} (keys opts)))]
+    (when-let [bad-opts (seq (remove #{:no-print :defaults} (keys opts)))]
       (throw (IllegalArgumentException. (apply print-str "Unsupported option(s) -" bad-opts))))
     [interfaces methods opts]))
 
@@ -398,6 +398,8 @@
        :implements ~interfaces 
        ~@methods)))
 
+(declare protocol?)
+
 (defmacro deftype
   "(deftype name [fields*]  options* specs*)
   
@@ -466,6 +468,21 @@
   (validate-fields fields)
   (let [gname name
         [interfaces methods opts] (parse-opts+specs opts+specs)
+        {defaults :defaults} opts
+        _ (doseq [d defaults]
+            (when-not (and (var? (resolve d))
+                           (protocol? @(resolve d))
+                           (:default-methods @(resolve d)))
+              (throw (IllegalArgumentException. (str d " is not a protocol with default implementations.")))))
+        defaults (map (comp deref resolve) defaults)
+        fields (into1 fields (mapcat :default-fields defaults))
+        marities (reduce1 (fn [m [name args & body]]
+                            (update-in m [name] conj (count args)))
+                          {} methods)
+        methods (reduce1 (fn [ms dflts]
+                           (into1 ms (remove #(some #{(count (second %))} (marities (symbol (clojure.core/name (first %))))) dflts)))
+                         methods (map :default-methods defaults))
+        interfaces (vec (into1 (set interfaces) (map :on defaults)))
         ns-part (namespace-munge *ns*)
         classname (symbol (str ns-part "." gname))
         hinted-fields fields
@@ -677,7 +694,7 @@
       [opts sigs])))
 
 (defn- emit-protocol [name opts sigs]
-  (let [{:keys [unions wraps-interface]} opts
+  (let [{:keys [unions ^Class wraps-interface]} opts
         iname (if wraps-interface
                 (symbol (.getName wraps-interface))
                 (symbol (qualify-classname name)))
@@ -763,6 +780,19 @@
                                  (vals sigs)))))
      (-reset-methods ~name)
      '~name)))
+
+(defmacro add-protocol-defaults
+  [name fields & methods]
+  (when-not (and (var? (resolve name))
+                 (:on-interface @(resolve name)))
+    (throw (IllegalArgumentException. (str name " is not a protocol."))))
+  (when-not (vector? fields)
+    (throw (IllegalArgumentException. "Fields must be a vector.")))
+  `(do
+     (alter-var-root (var ~name) assoc
+                     :default-fields '[~@fields]
+                     :default-methods [~@methods])
+     '~name))
 
 (defmacro declare-protocol
   [pname]
