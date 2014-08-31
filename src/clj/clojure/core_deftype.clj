@@ -643,15 +643,15 @@
   (set (keys prim-to-box)))
 
 (def ^:private array-shorthand-to-internal
-  {'objects (symbol "[Ljava.lang.Object;")
-   'ints (symbol "[I")
-   'longs (symbol "[J")
-   'floats (symbol "[F")
-   'doubles (symbol "[D")
-   'chars (symbol "[C")
-   'shorts (symbol "[S")
-   'bytes (symbol "[B")
-   'booleans (symbol "[Z")})
+  {'objects "[Ljava.lang.Object;"
+   'ints "[I"
+   'longs "[J"
+   'floats "[F"
+   'doubles "[D"
+   'chars "[C"
+   'shorts "[S"
+   'bytes "[B"
+   'booleans "[Z"})
 (def ^:private array-tags
   (set (keys array-shorthand-to-internal)))
 
@@ -826,7 +826,7 @@
     (throw (IllegalArgumentException. (str iface " is not an interface."))))
   (let [^Class iface (resolve iface)
         name-sym #(-> % .getName symbol)
-        tag-sym #(or (-> % meta :tag resolve-tag internal-array-tag) 'java.lang.Object)
+        tag-sym #(symbol (or (-> % meta :tag resolve-tag internal-array-tag) 'java.lang.Object))
         type-map #(update-in %1 [(first %2)] conj (vec (rest %2)))
         imeths (reduce1 type-map
                         {}
