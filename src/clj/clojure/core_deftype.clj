@@ -641,10 +641,22 @@
    'void 'java.lang.Object})
 (def ^:private prim-tags
   (set (keys prim-to-box)))
+
+(def ^:private array-shorthand-to-internal
+  {'objects "[Ljava.lang.Object;"
+   'ints "[I"
+   'longs "[J"
+   'floats "[F"
+   'doubles "[D"
+   'chars "[C"
+   'shorts "[S"
+   'bytes "[B"
+   'booleans "[Z"})
 (def ^:private array-tags
-  #{'objects 'ints 'longs 'floats 'doubles 'chars 'shorts 'bytes 'booleans})
+  (set (keys array-shorthand-to-internal)))
+
 (def ^:private literal-tags
-  (set (concat prim-tags array-tags)))
+  (into1 prim-tags array-tags))
 
 (defn- qualify-classname [name]
   (str (munge (namespace-munge *ns*)) "." (munge name)))
@@ -674,8 +686,12 @@
    :else
    (throw (IllegalArgumentException. (str tag " is not a valid tag.")))))
 
+(defn- internal-array-tag [tag]
+  (get array-shorthand-to-internal tag tag))
+
 (defn- box-tag [tag]
   (or (prim-to-box tag) tag))
+
 (defn- assoc-some
   ([m k v]
      (if (some? v)
@@ -810,7 +826,7 @@
     (throw (IllegalArgumentException. (str iface " is not an interface."))))
   (let [^Class iface (resolve iface)
         name-sym #(-> % .getName symbol)
-        tag-sym #(or (-> % meta :tag resolve-tag) 'java.lang.Object)
+        tag-sym #(symbol (or (-> % meta :tag resolve-tag internal-array-tag) 'java.lang.Object))
         type-map #(update-in %1 [(first %2)] conj (vec (rest %2)))
         imeths (reduce1 type-map
                         {}
@@ -827,8 +843,20 @@
                                                (vec (map tag-sym (rest %)))
                                                (tag-sym n))
                                       als))))]
-    (when (not= imeths pmeths)
-      (throw (IllegalArgumentException. "Signatures do not match interface.")))
+    (when-not (= (set (keys imeths)) (set (keys pmeths)))
+      (throw (IllegalArgumentException. (str "Signatures do not match interface " iface
+                                             ". Missing names: "
+                                             (seq (remove #(some (set (keys imeths)) %) (keys pmeths)))
+                                             " Extra names: "
+                                             (seq (remove #(some (set (keys pmeths)) %) (keys imeths)))))))
+    (doseq [k (keys imeths)]
+      (when-not (= (apply sorted-set (imeths k))
+                   (apply sorted-set (pmeths k)))
+        (throw (IllegalArgumentException. (str "Method " k " does not match definition in " iface
+                                               ". Missing sigs: "
+                                               (seq (remove #(some (set (imeths k)) %) (pmeths k)))
+                                               " Extra sigs: "
+                                               (seq (remove #(some (set (pmeths k)) %) (imeths k))))))))
     (emit-protocol pname {:wraps-interface iface} sigs)))
 
 (defmacro wrap-interface
