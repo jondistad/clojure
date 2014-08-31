@@ -1,4 +1,5 @@
-(ns clojure.lang)
+(ns clojure.lang
+  (:require [clojure.string :as s]))
 
 (declare-protocol ISeq)
 
@@ -324,17 +325,31 @@
   IObj
   JavaSerializable)
 
-(defmacro add-protocol-defaults
-  [name fields & methods]
-  (when-not (and (var? (resolve name))
-                 (:on-interface @(resolve name)))
-    (throw (IllegalArgumentException. (str name " is not a protocol."))))
-  (when-not (vector? fields)
-    (throw (IllegalArgumentException. "Fields must be a vector.")))
-  `(alter-var-root (var ~name) assoc
-                   :default-fields '[~@fields]
-                   :default-methods [~@methods]))
-(defmacro deftype-ext
-  [name fields & opts+sigs]
-  )
+(add-protocol-defaults Obj
+  [^IPersistentMap _meta]
+  `(^{:tag IPersistentMap :on meta} -meta [this#] ~'_meta))
 
+(wrap-interface java.util.List
+  JavaList
+  (^{:tag boolean :on add} -jlist-add! [_ e])
+  (^{:tag void :on add} -jlist-add-at! [_ ^int idx elm])
+  (^{:tag boolean :on addAll} -jlist-add-all! [_ ^java.util.Collection c] [_ ^int i ^java.util.Collection c])
+  (^{:tag void :on clear} -jlist-clear! [_])
+  (^{:tag boolean :on contains} -jlist-contains? [_ o])
+  (^{:tag boolean :on containsAll} -jlist-contains-all? [_ ^java.util.Collection c])
+  (^{:tag boolean :on equals} -jlist-equiv [_ o])
+  (^{:on get} -jlist-get [_ ^int i])
+  (^{:tag int :on hashCode} -jlist-hash-code [_])
+  (^{:tag int :on indexOf} -jlist-index-of [_ o])
+  (^{:tag boolean :on isEmpty} -jlist-empty? [_])
+  (^{:tag java.util.Iterator :on iterator} -jlist-iterator [_])
+  (^{:tag int :on lastIndexOf} -jlist-last-index-of [_ o])
+  (^{:tag java.util.ListIterator :on listIterator} -jlist-list-iterator [_] [_ ^int i])
+  (^{:on remove} -jlist-remove-at! [_ ^int i])
+  (^{:tag boolean :on remove} -jlist-remove! [_ o])
+  (^{:tag boolean :on removeAll} -jlist-remove-all! [_ ^java.util.Collection c])
+  (^{:tag boolean :on retainAll} -jlist-retain-all! [_ ^java.util.Collection c])
+  (^{:on set} -jlist-set! [_ ^int i o])
+  (^{:tag int :on size} -jlist-count [_])
+  (^{:tag java.util.List :on subList} -jlist-sublist [_ ^int from ^int to])
+  (^{:tag objects :on toArray} -jlist-to-array [_] [_ ^objects a]))
