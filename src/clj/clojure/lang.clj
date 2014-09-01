@@ -30,12 +30,15 @@
 (defprotocol Counted
   (^{:tag int :on count} -count [coll]))
 
+(defprotocol Countable
+  (^{:tag int :on count} -coll-count [coll]))
+
 (union-protocols IPersistentCollection
   Seqable
   IEquiv
   IConjoinable
   IEmptyableCollection
-  Counted)
+  Countable)
 
 (union-protocols ISeq
   IFirst
@@ -386,24 +389,34 @@
          (if (or (nil? ms#)
                  (not (Util/equiv (-first this#) (-first o#))))
            false
-           (recur (rest s#) (rest ms#)))
+           (recur (-next s#) (-next ms#)))
          (nil? ms#)))))
   `(hashCode
     [this#]
     (if (= -1 ~'_hash)
-      (let [hsh# (int-array [1])]
-        (doseq [s# (-seq this#)]
-          (aset hsh# 0 (+ (* 31 (aget hsh# 0))
-                          (if (nil? (-first s#))
-                            0
-                            (.hashCode (-first s#))))))
-        (set! ~'_hash (aget hsh# 0)))
+      (loop [hsh# (int 1)
+             s# (-seq this#)]
+        (if s#
+          (recur (+ (* 31 hsh#)
+                    (if (nil? (-first s#))
+                      0
+                      (.hashCode (-first s#))))
+                 (-next s#))
+          (set! ~'_hash hsh#)))
       ~'_hash))
   `(-hasheq
     [this#]
     (if (= -1 ~'_hasheq)
       (set! ~'_hasheq (Murmur3/hashOrdered this#))
       ~'_hasheq))
-  `(-count
+  `(-coll-count
     [this#]
-    ()))
+    (loop [i# (int 1)
+           s# (-next this#)]
+      (if s#
+        (if (satisfies? Counted s#)
+          (+ i# (-count s#))
+          (recur (inc i#)))
+        i#)))
+  `(-seq [this#] this#)
+  `(-conj))
