@@ -366,6 +366,10 @@
   JavaSerializable
   IHashEq)
 
+(defn- aseq-reify
+  ^java.util.List [aseq]
+  (java.util.Collections/unmodifiableList (java.util.ArrayList. aseq)))
+
 (add-protocol-defaults ASeq
   [^{:tag int :unsynchronized-mutable true} _hash
    ^{:tag int :unsynchronized-mutable true} _hasheq]
@@ -419,4 +423,95 @@
           (recur (inc i#)))
         i#)))
   `(-seq [this#] this#)
-  `(-conj))
+  `(-conj
+    [this# o#]
+    (clojure.lang.Cons. o# this#))
+  `(-rest
+    [this#]
+    (if-let [s# (-next this#)]
+      s#
+      clojure.lang.PersistentList/EMPTY))
+  `(-jlist-to-array
+    [this#]
+    (RT/seqToArray (-seq this#)))
+  `(-jlist-add!
+    [this# o#]
+    (throw (UnsupportedOperationException.)))
+  `(-jlist-remove!
+    [this# o#]
+    (throw (UnsupportedOperationException.)))
+  `(-jlist-add-all!
+    [this# coll#]
+    (throw (UnsupportedOperationException.)))
+  `(-jlist-clear!
+    [this#]
+    (throw (UnsupportedOperationException.)))
+  `(-jlist-retain-all!
+    [this# coll#]
+    (throw (UnsupportedOperationException.)))
+  `(-jlist-remove-all!
+    [this# coll#]
+    (throw (UnsupportedOperationException.)))
+  `(-jlist-contains-all?
+    [this# coll#]
+    (loop [it# (.iterator coll#)]
+      (if (and (.hasNext it#)
+               (-jlist-contains? (.next it#)))
+        (recur it#)
+        false)))
+  `(-jlist-to-array
+    [this# a#]
+    (RT/seqToPassedArray (-seq this#) a#))
+  `(-jlist-count
+    [this#]
+    (-coll-count this#))
+  `(-jlist-empty?
+    [this#]
+    (nil? (-seq this#))) ; this can't ever be true (-seq this) == this :-/
+  `(-jlist-contains?
+    [this# o#]
+    (loop [s# (-seq this#)]
+      (if s#
+        (if (Util/equiv (-first s#) o#)
+          true
+          (recur (-next s#)))
+        false)))
+  `(-jlist-iterator
+    [this#]
+    (clojure.lang.SeqIterator. this#))
+  `(-jlist-sublist
+    [this# from# to#]
+    (.subList (aseq-reify this#) from# to#))
+  `(-jlist-set!
+    [this# i# o#]
+    (throw (UnsupportedOperationException.)))
+  `(-jlist-remove-at!
+    [this# i#]
+    (throw (UnsupportedOperationException.)))
+  `(-jlist-index-of
+    [this# o#]
+    (loop [s# (-seq this#)
+           i# (int 0)]
+      (if s#
+        (if (Util/equiv (-first s#) o#)
+          i#
+          (recur (-next s#) (inc i#)))
+        -1)))
+  `(-jlist-last-index-of
+    [this# o#]
+    (.lastIndexOf (aseq-reify this#) o#))
+  `(-jlist-list-iterator
+    [this#]
+    (.listIterator (aseq-reify this#)))
+  `(-jlist-list-iterator
+    [this# i#]
+    (.listIterator (aseq-reify this#) i#))
+  `(-jlist-get
+    [this# i#]
+    (RT/nth this# i#))
+  `(-jlist-add-at!
+    [this# i# o#]
+    (throw (UnsupportedOperationException.)))
+  `(-jlist-add-all
+    [this# i# coll#]
+    (throw (UnsupportedOperationException.))))
