@@ -1,5 +1,6 @@
 (ns clojure.lang
-  (:require [clojure.string :as s]))
+  (:require [clojure.string :as s])
+  (:import [clojure.lang RT Util Murmur3]))
 
 (declare-protocol ISeq)
 
@@ -327,7 +328,7 @@
 
 (add-protocol-defaults Obj
   [^IPersistentMap _meta]
-  `(^{:tag IPersistentMap :on meta} -meta [this#] ~'_meta))
+  `(-meta [this#] ~'_meta))
 
 (wrap-interface java.util.List
   JavaList
@@ -339,7 +340,7 @@
   (^{:tag boolean :on containsAll} -jlist-contains-all? [_ ^java.util.Collection c])
   (^{:tag boolean :on equals} -jlist-equiv [_ o])
   (^{:on get} -jlist-get [_ ^int i])
-  (^{:tag int :on hashCode} -jlist-hash-code [_])
+  (^{:tag int :on hashCode} -jlist-hash-code [_]) ;is explicitly in interface, so we have to define it
   (^{:tag int :on indexOf} -jlist-index-of [_ o])
   (^{:tag boolean :on isEmpty} -jlist-empty? [_])
   (^{:tag java.util.Iterator :on iterator} -jlist-iterator [_])
@@ -353,3 +354,56 @@
   (^{:tag int :on size} -jlist-count [_])
   (^{:tag java.util.List :on subList} -jlist-sublist [_ ^int from ^int to])
   (^{:tag objects :on toArray} -jlist-to-array [_] [_ ^objects a]))
+
+(union-protocols ASeq
+  Obj
+  ISeq
+  Sequential
+  JavaList
+  JavaSerializable
+  IHashEq)
+
+(add-protocol-defaults ASeq
+  [^{:tag int :unsynchronized-mutable true} _hash
+   ^{:tag int :unsynchronized-mutable true} _hasheq]
+  
+  `(toString [this#] (RT/printString this#))
+  `(-empty [this#] clojure.lang.PersistentList/EMPTY)
+  `(-equiv
+    [this# o#]
+    (cond
+     (identical? this# o#)
+     true
+
+     (not (or (satisfies? Sequential o#)
+              (satisfies? JavaList o#)))
+     false
+
+     :else
+     (loop [s# (-seq this#)
+            ms# (seq o#)]
+       (if s#
+         (if (or (nil? ms#)
+                 (not (Util/equiv (-first this#) (-first o#))))
+           false
+           (recur (rest s#) (rest ms#)))
+         (nil? ms#)))))
+  `(hashCode
+    [this#]
+    (if (= -1 ~'_hash)
+      (let [hsh# (int-array [1])]
+        (doseq [s# (-seq this#)]
+          (aset hsh# 0 (+ (* 31 (aget hsh# 0))
+                          (if (nil? (-first s#))
+                            0
+                            (.hashCode (-first s#))))))
+        (set! ~'_hash (aget hsh# 0)))
+      ~'_hash))
+  `(-hasheq
+    [this#]
+    (if (= -1 ~'_hasheq)
+      (set! ~'_hasheq (Murmur3/hashOrdered this#))
+      ~'_hasheq))
+  `(-count
+    [this#]
+    ()))

@@ -845,10 +845,10 @@
                                       als))))]
     (when-not (= (set (keys imeths)) (set (keys pmeths)))
       (throw (IllegalArgumentException. (str "Signatures do not match interface " iface
-                                             ". Missing names: "
-                                             (seq (remove #(some (set (keys imeths)) %) (keys pmeths)))
-                                             " Extra names: "
-                                             (seq (remove #(some (set (keys pmeths)) %) (keys imeths)))))))
+                                             ". Interface names: "
+                                             (keys imeths)
+                                             " Protocol names: "
+                                             (keys pmeths)))))
     (doseq [k (keys imeths)]
       (when-not (= (apply sorted-set (imeths k))
                    (apply sorted-set (pmeths k)))
