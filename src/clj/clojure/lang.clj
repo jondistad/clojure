@@ -398,7 +398,7 @@
   `(hashCode
     [this#]
     (if (= -1 ~'_hash)
-      (loop [hsh# (int 1)
+      (loop [hsh# 1
              s# (-seq this#)]
         (if s#
           (recur (+ (* 31 hsh#)
@@ -406,7 +406,7 @@
                       0
                       (.hashCode (-first s#))))
                  (-next s#))
-          (set! ~'_hash hsh#)))
+          (set! ~'_hash (unchecked-int hsh#))))
       ~'_hash))
   `(-hasheq
     [this#]
@@ -420,7 +420,7 @@
       (if s#
         (if (satisfies? Counted s#)
           (+ i# (-count s#))
-          (recur (inc i#)))
+          (recur (inc i#) (-next s#)))
         i#)))
   `(-seq [this#] this#)
   `(-conj
