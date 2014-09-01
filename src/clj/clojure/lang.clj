@@ -325,11 +325,11 @@
 (wrap-interface java.io.Serializable
   JavaSerializable)
 
-(union-protocols Obj
+(union-protocols Obj*
   IObj
   JavaSerializable)
 
-(add-protocol-defaults Obj
+(add-protocol-defaults Obj*
   [^IPersistentMap _meta]
   `(-meta [this#] ~'_meta))
 
@@ -358,8 +358,8 @@
   (^{:tag java.util.List :on subList} -jlist-sublist [_ ^int from ^int to])
   (^{:tag objects :on toArray} -jlist-to-array [_] [_ ^objects a]))
 
-(union-protocols ASeq
-  Obj
+(union-protocols ASeq*
+  Obj*
   ISeq
   Sequential
   JavaList
@@ -370,7 +370,7 @@
   ^java.util.List [aseq]
   (java.util.Collections/unmodifiableList (java.util.ArrayList. aseq)))
 
-(add-protocol-defaults ASeq
+(add-protocol-defaults ASeq*
   [^{:tag int :unsynchronized-mutable true} _hash
    ^{:tag int :unsynchronized-mutable true} _hasheq]
   
@@ -456,7 +456,7 @@
     [this# coll#]
     (loop [it# (.iterator coll#)]
       (if (and (.hasNext it#)
-               (-jlist-contains? (.next it#)))
+               (-jlist-contains? this# (.next it#)))
         (recur it#)
         false)))
   `(-jlist-to-array
@@ -481,7 +481,7 @@
     (clojure.lang.SeqIterator. this#))
   `(-jlist-sublist
     [this# from# to#]
-    (.subList (aseq-reify this#) from# to#))
+    (.subList (#'aseq-reify this#) from# to#))
   `(-jlist-set!
     [this# i# o#]
     (throw (UnsupportedOperationException.)))
@@ -499,19 +499,19 @@
         -1)))
   `(-jlist-last-index-of
     [this# o#]
-    (.lastIndexOf (aseq-reify this#) o#))
+    (.lastIndexOf (#'aseq-reify this#) o#))
   `(-jlist-list-iterator
     [this#]
-    (.listIterator (aseq-reify this#)))
+    (.listIterator (#'aseq-reify this#)))
   `(-jlist-list-iterator
     [this# i#]
-    (.listIterator (aseq-reify this#) i#))
+    (.listIterator (#'aseq-reify this#) i#))
   `(-jlist-get
     [this# i#]
     (RT/nth this# i#))
   `(-jlist-add-at!
     [this# i# o#]
     (throw (UnsupportedOperationException.)))
-  `(-jlist-add-all
+  `(-jlist-add-all!
     [this# i# coll#]
     (throw (UnsupportedOperationException.))))
