@@ -43,15 +43,46 @@
       (recur (assoc opts k v) rs)
       [opts s])))
 
+(defn- find-prot
+  [pvar mname]
+  (let [{unions :unions} @pvar]
+    (if (seq unions)
+      (some #(find-prot % mname) unions)
+      (when (-> @pvar
+                :sigs
+                (get (keyword (name mname))))
+        @pvar))))
+
+(defn- maybe-retag [to from]
+  (if-let [tag (:tag from)]
+    (merge {:tag tag} to)
+    to))
+
 (defn- remap-protocol-methodname [maybe-prot mname]
   (if (var? (resolve maybe-prot))
-    (if-let [{method-map :method-map} @(resolve maybe-prot)]
+    (let [prot (find-prot (resolve maybe-prot) mname)
+          {:keys [sigs method-map]} prot
+          sig (get sigs (keyword (name mname)))]
       (-> method-map
-          (get (keyword mname) mname)
+          (get (keyword (name mname)) mname)
           name
           symbol
-          (with-meta (meta mname))))
+          (with-meta (maybe-retag (meta mname) sig))))
     mname))
+
+(defn- hint-protocol-arglists [maybe-prot mname args]
+  (letfn [(dohint [pvar]
+            (let [sig (get-in (find-prot pvar mname) [:sigs (keyword (name mname))])
+                  arglist (some #(when (= (count args) (count %)) %)
+                                (:arglists sig))]
+              (when arglist
+                (with-meta
+                  (vec (map #(vary-meta %1 maybe-retag (meta %2))
+                            args arglist))
+                  (maybe-retag (meta args) (meta arglist))))))]
+    (if (var? (resolve maybe-prot))
+      (or (dohint (resolve maybe-prot)) args)
+      args)))
 
 (defn- parse-impls [specs]
   (loop [ret {} s specs]
@@ -74,7 +105,7 @@
                        (for [[iface meths] impls]
                          (map (fn [[name params & body]]
                                 (cons (remap-protocol-methodname iface name)
-                                      (maybe-destructured params body)))
+                                      (maybe-destructured (hint-protocol-arglists iface name params) body)))
                               meths)))]
     (when-let [bad-opts (seq (remove #{:no-print :defaults} (keys opts)))]
       (throw (IllegalArgumentException. (apply print-str "Unsupported option(s) -" bad-opts))))
@@ -479,9 +510,15 @@
         marities (reduce1 (fn [m [name args & body]]
                             (update-in m [name] conj (count args)))
                           {} methods)
-        methods (reduce1 (fn [ms dflts]
-                           (into1 ms (remove #(some #{(count (second %))} (marities (symbol (clojure.core/name (first %))))) dflts)))
-                         methods (map :default-methods defaults))
+        methods (reduce1 (fn [ms {dflts :default-methods prot :var}]
+                           (into1 ms (remove (fn [[name args & body]]
+                                               (some #{(count args)} (marities name)))
+                                             (map #(list*
+                                                    (remap-protocol-methodname (.sym prot) (first %))
+                                                    (hint-protocol-arglists (.sym prot) (first %) (second %))
+                                                    (nnext %))
+                                                  dflts))))
+                         methods defaults)
         interfaces (vec (into1 (set interfaces) (map :on defaults)))
         ns-part (namespace-munge *ns*)
         classname (symbol (str ns-part "." gname))
@@ -676,10 +713,6 @@
         (protocol? @(resolve tag)))
    (:on @(resolve tag))
 
-   (and (var? (resolve tag))
-        (:protocol? (meta (resolve tag))))
-   (symbol (qualify-classname tag))
-
    (symbol? tag)
    (symbol (.getName ^Class (resolve tag)))
 
@@ -715,7 +748,7 @@
                 (symbol (.getName wraps-interface))
                 (symbol (qualify-classname name)))
         opts (merge {:on (list 'quote iname) :on-interface iname} opts)
-        replace-this (fn [tag] (if (= 'this tag) iname tag))
+        replace-this (fn [tag] (if (= 'this tag) iname (resolve-tag tag)))
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
@@ -806,7 +839,8 @@
     (throw (IllegalArgumentException. "Fields must be a vector.")))
   `(do
      (alter-var-root (var ~name) assoc
-                     :default-fields '[~@fields]
+                     :default-fields '[~@(map #(vary-meta % assoc-some :tag (-> % meta :tag resolve-tag))
+                                              fields)]
                      :default-methods [~@methods])
      '~name))
 
