@@ -499,14 +499,18 @@
   (validate-fields fields)
   (let [gname name
         [interfaces methods opts] (parse-opts+specs opts+specs)
-        {defaults :defaults} opts
-        _ (doseq [d defaults]
-            (when-not (and (var? (resolve d))
-                           (protocol? @(resolve d))
-                           (:default-methods @(resolve d)))
-              (throw (IllegalArgumentException. (str d " is not a protocol with default implementations.")))))
-        defaults (map (comp deref resolve) defaults)
-        fields (into1 fields (mapcat :default-fields defaults))
+        defaults (for [d (:defaults opts)]
+                   (if (and (var? (resolve d))
+                            (protocol? @(resolve d))
+                            (:default-methods @(resolve d)))
+                     @(resolve d)
+                     (throw (IllegalArgumentException. (str d " is not a protocol with default implementations.")))))
+        _ (doseq [d defaults
+                  f (:default-fields d)]
+            (when-not (some #{f} fields)
+              (throw (IllegalArgumentException. (str "Default " (:var d) " requires field " f ".")))))
+        dfields (mapcat :default-fields defaults)
+        fields (replace (zipmap dfields dfields) fields) ; transfers metadata
         marities (reduce1 (fn [m [name args & body]]
                             (update-in m [name] conj (count args)))
                           {} methods)
