@@ -505,10 +505,18 @@
                             (:default-methods @(resolve d)))
                      @(resolve d)
                      (throw (IllegalArgumentException. (str d " is not a protocol with default implementations.")))))
-        _ (doseq [d defaults
-                  f (:default-fields d)]
-            (when-not (some #{f} fields)
-              (throw (IllegalArgumentException. (str "Default " (:var d) " requires field " f ".")))))
+        _ (loop [ds defaults
+                 invalid {}]
+            (if (seq ds)
+              (let [fs (:default-fields (first ds))]
+                (if-not (every? (set fields) fs)
+                  (recur (rest ds)
+                         (assoc invalid
+                           (:var (first ds))
+                           (vec (remove #(some #{%} fields) fs))))
+                  (recur (rest ds) invalid)))
+              (when (seq invalid)
+                (throw (IllegalArgumentException. (str "Missing default fields: " invalid))))))
         dfields (mapcat :default-fields defaults)
         fields (replace (zipmap dfields dfields) fields) ; transfers metadata
         marities (reduce1 (fn [m [name args & body]]
