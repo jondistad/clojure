@@ -373,7 +373,7 @@
   ^java.util.List [aseq]
   (java.util.Collections/unmodifiableList (java.util.ArrayList. aseq)))
 
-(declare-type clojure.lang.Cons* [x y])
+(declare ->PCons)
 
 (add-protocol-defaults ASeq*
   [^{:tag int :unsynchronized-mutable true} _hash
@@ -430,7 +430,7 @@
   `(-seq [this#] this#)
   `(^ISeq -conj
     [this# o#]
-    (clojure.lang.Cons*. o# this#))
+    (->PCons o# this#))
   `(-rest
     [this#]
     (if-let [s# (-next this#)]
@@ -521,10 +521,10 @@
     [this# i# coll#]
     (throw (UnsupportedOperationException.))))
 
-(deftype ASeq_impl [_hash _hasheq _meta]
-  :defaults [Obj* ASeq*])
+(deftype ASeq_impl [_hash _hasheq]
+  :defaults [ASeq*])
 
-(deftype Cons* [_first ^ISeq _rest _hash _hasheq _meta]
+(deftype PCons [_first ^ISeq _rest _hash _hasheq _meta]
   :defaults [Obj* ASeq*]
   ASeq*
   (-first [c] _first)
@@ -532,4 +532,4 @@
   (-rest [c] (or _rest clojure.lang.PersistentList/EMPTY))
   (-coll-count [c] (inc (RT/count _rest)))
   Obj*
-  (-with-meta [c m] (Cons*. _first _rest _hash _hasheq m)))
+  (-with-meta [c m] (PCons. _first _rest _hash _hasheq m)))

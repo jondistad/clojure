@@ -6374,6 +6374,7 @@
 (load "genclass")
 (load "core_deftype")
 (load "core/protocols")
+(load "lang")
 (load "gvec")
 (load "instant")
 (load "uuid")

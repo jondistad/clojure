@@ -13,7 +13,7 @@ package clojure.lang;
 import java.io.Serializable;
 import java.util.*;
 
-public abstract class ASeq implements ASeq_STAR_ {
+public abstract class ASeq extends Obj implements ASeq_STAR_ {
 
 final ASeq_impl _inner_aseq;
 
@@ -26,11 +26,14 @@ public IPersistentCollection empty(){
 }
 
 protected ASeq(IPersistentMap meta) {
-	this._inner_aseq = new ASeq_impl(-1, -1, meta);
+	super(meta);
+	this._inner_aseq = new ASeq_impl(-1, -1);
 }
 
 
 protected ASeq(){
+	super(null);
+	this._inner_aseq = new ASeq_impl(-1, -1);
 }
 
 public boolean equiv(Object obj){
@@ -77,15 +80,15 @@ public int count(){
 }
 
 final public ISeq seq(){
-	return _inner_aseq.seq();
+	return this;
 }
 
 public ISeq cons(Object o){
-	return _inner_aseq.cons(o);
+	return new PCons(o, this, -1, -1, null);
 }
 
 public ISeq more(){
-	return _inner_aseq.more();
+	return next() == null ? PersistentList.EMPTY : next();
 }
 
 //final public ISeq rest(){
@@ -114,7 +117,7 @@ public boolean addAll(Collection c){
 }
 
 public void clear(){
-	return _inner_aseq.clear();
+	_inner_aseq.clear();
 }
 
 public boolean retainAll(Collection c){
@@ -138,7 +141,7 @@ public int size(){
 }
 
 public boolean isEmpty(){
-	return _inner_aseq.isEmpty()
+	return _inner_aseq.isEmpty();
 }
 
 public boolean contains(Object o){
@@ -155,7 +158,7 @@ public Iterator iterator(){
 //////////// List stuff /////////////////
 
 public List subList(int fromIndex, int toIndex){
-	return _inner_aseq.subList(fromIntex, toIndex);
+	return _inner_aseq.subList(fromIndex, toIndex);
 }
 
 public Object set(int index, Object element){
@@ -171,11 +174,11 @@ public int indexOf(Object o){
 }
 
 public int lastIndexOf(Object o){
-	return _inner_aseq.indexOf(o);
+	return _inner_aseq.lastIndexOf(o);
 }
 
 public ListIterator listIterator(){
-	return _inner_aseq.indexOf(o);
+	return _inner_aseq.listIterator();
 }
 
 public ListIterator listIterator(int index){
@@ -187,7 +190,7 @@ public Object get(int index){
 }
 
 public void add(int index, Object element){
-	return _inner_aseq.add(index, element);
+	_inner_aseq.add(index, element);
 }
 
 public boolean addAll(int index, Collection c){

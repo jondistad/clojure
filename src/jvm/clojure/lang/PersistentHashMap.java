@@ -213,7 +213,7 @@ public int count(){
 
 public ISeq seq(){
 	ISeq s = root != null ? root.nodeSeq() : null; 
-	return hasNull ? new Cons_STAR_(new MapEntry(null, nullValue), s) : s;
+	return hasNull ? new PCons(new MapEntry(null, nullValue), s, -1, -1, null) : s;
 }
 
 public IPersistentCollection empty(){

@@ -33,7 +33,6 @@
   (aget [arr ^int i])
   (aset [arr ^int i val]))
 
-(declare-type clojure.lang.Cons* [x y])
 
 (deftype ArrayChunk [^clojure.core.ArrayManager am arr ^int off ^int end]
   
@@ -83,7 +82,7 @@
     (let [s (.next this)]
       (or s (clojure.lang.PersistentList/EMPTY))))
   (cons [this o]
-    (clojure.lang.Cons*. o this))
+    (clojure.lang/->PCons o this))
   (count [this]
     (loop [i 1
            s (next this)]
