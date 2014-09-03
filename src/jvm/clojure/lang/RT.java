@@ -480,8 +480,8 @@ public static void loadLibrary(String libname){
 ////////////// Collections support /////////////////////////////////
 
 static public ISeq seq(Object coll){
-	if(coll instanceof ASeq)
-		return (ASeq) coll;
+	if(coll instanceof ASeq_STAR_)
+		return (ASeq_STAR_) coll;
 	else if(coll instanceof LazySeq)
 		return ((LazySeq) coll).seq();
 	else
