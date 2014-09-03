@@ -8,6 +8,10 @@
 
 (in-ns 'clojure.core)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;; Utility fns ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare protocol?)
+
 (defn- assoc-some
   ([m k v]
      (if (some? v)
@@ -17,6 +21,62 @@
      (if (even? (count kvs))
        (reduce1 (fn [m [k v]] (assoc-some m k v)) m (cons [k v] (partition 2 kvs)))
        (throw (IllegalArgumentException. "Requires even number of key/value pairs")))))
+
+(def ^:private prim-to-box
+  {'int 'java.lang.Integer
+   'long 'java.lang.Long
+   'float 'java.lang.Float
+   'double 'java.lang.Double
+   'char 'java.lang.Character
+   'short 'java.lang.Short
+   'byte 'java.lang.Byte
+   'boolean 'java.lang.Boolean
+   'void 'java.lang.Object})
+(def ^:private prim-tags
+  (set (keys prim-to-box)))
+
+(def ^:private array-shorthand-to-internal
+  {'objects "[Ljava.lang.Object;"
+   'ints "[I"
+   'longs "[J"
+   'floats "[F"
+   'doubles "[D"
+   'chars "[C"
+   'shorts "[S"
+   'bytes "[B"
+   'booleans "[Z"})
+(def ^:private array-tags
+  (set (keys array-shorthand-to-internal)))
+
+(def ^:private literal-tags
+  (into1 prim-tags array-tags))
+
+(defn- resolve-tag [tag]
+  (cond
+   (nil? tag)
+   nil
+
+   (string? tag)
+   tag
+
+   (literal-tags tag)
+   tag
+
+   (and (var? (resolve tag))
+        (protocol? @(resolve tag)))
+   (:on @(resolve tag))
+
+   (symbol? tag)
+   (symbol (.getName ^Class (resolve tag)))
+
+   :else
+   (throw (IllegalArgumentException. (str tag " is not a valid tag.")))))
+
+(defn- internal-array-tag [tag]
+  (get array-shorthand-to-internal tag tag))
+
+(defn- box-tag [tag]
+  (or (prim-to-box tag) tag))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; definterface ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -439,8 +499,6 @@
        :implements ~interfaces 
        ~@methods)))
 
-(declare protocol?)
-
 (defmacro deftype
   "(deftype name [fields*]  options* specs*)
   
@@ -689,64 +747,8 @@
                      (str "method " (.sym v) " of protocol " (.sym p))
                      (str "function " (.sym v)))))))))
 
-(def ^:private prim-to-box
-  {'int 'java.lang.Integer
-   'long 'java.lang.Long
-   'float 'java.lang.Float
-   'double 'java.lang.Double
-   'char 'java.lang.Character
-   'short 'java.lang.Short
-   'byte 'java.lang.Byte
-   'boolean 'java.lang.Boolean
-   'void 'java.lang.Object})
-(def ^:private prim-tags
-  (set (keys prim-to-box)))
-
-(def ^:private array-shorthand-to-internal
-  {'objects "[Ljava.lang.Object;"
-   'ints "[I"
-   'longs "[J"
-   'floats "[F"
-   'doubles "[D"
-   'chars "[C"
-   'shorts "[S"
-   'bytes "[B"
-   'booleans "[Z"})
-(def ^:private array-tags
-  (set (keys array-shorthand-to-internal)))
-
-(def ^:private literal-tags
-  (into1 prim-tags array-tags))
-
 (defn- qualify-classname [name]
   (str (munge (namespace-munge *ns*)) "." (munge name)))
-
-(defn- resolve-tag [tag]
-  (cond
-   (nil? tag)
-   nil
-
-   (string? tag)
-   tag
-
-   (literal-tags tag)
-   tag
-
-   (and (var? (resolve tag))
-        (protocol? @(resolve tag)))
-   (:on @(resolve tag))
-
-   (symbol? tag)
-   (symbol (.getName ^Class (resolve tag)))
-
-   :else
-   (throw (IllegalArgumentException. (str tag " is not a valid tag.")))))
-
-(defn- internal-array-tag [tag]
-  (get array-shorthand-to-internal tag tag))
-
-(defn- box-tag [tag]
-  (or (prim-to-box tag) tag))
 
 (defn- parse-protocol-opts+sigs [opts+sigs]
   (loop [opts {} sigs opts+sigs]
