@@ -14,20 +14,16 @@ package clojure.lang;
 
 import java.io.Serializable;
 
-public abstract class Obj implements IObj, Serializable {
+public abstract class Obj implements Obj_STAR_ {
 
-final IPersistentMap _meta;
+final Obj_impl _inner_obj;
 
-public Obj(IPersistentMap meta){
-	this._meta = meta;
-}
-
-public Obj(){
-	_meta = null;
+public Obj(Obj_STAR_ inner){
+	this._inner_obj = inner;
 }
 
 final public IPersistentMap meta(){
-	return _meta;
+	return _inner_obj.meta();
 }
 
 abstract public Obj withMeta(IPersistentMap meta);

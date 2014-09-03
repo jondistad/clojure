@@ -13,20 +13,20 @@ package clojure.lang;
 import java.io.Serializable;
 import java.util.*;
 
-public abstract class ASeq extends Obj implements ISeq, Sequential, List, Serializable, IHashEq {
-transient int _hash = -1;
-transient int _hasheq = -1;
+public abstract class ASeq implements ASeq_STAR_ {
+
+final ASeq_STAR_ _inner_aseq;
 
 public String toString(){
-	return RT.printString(this);
+	return _inner_aseq.toString();
 }
 
 public IPersistentCollection empty(){
-	return PersistentList.EMPTY;
+	return _inner_aseq.empty();
 }
 
-protected ASeq(IPersistentMap meta){
-	super(meta);
+protected ASeq(ASeq_STAR_ inner) {
+	this._inner_aseq = inner;
 }
 
 
@@ -34,58 +34,19 @@ protected ASeq(){
 }
 
 public boolean equiv(Object obj){
-
-	if(!(obj instanceof Sequential || obj instanceof List))
-		return false;
-	ISeq ms = RT.seq(obj);
-	for(ISeq s = seq(); s != null; s = s.next(), ms = ms.next())
-		{
-		if(ms == null || !Util.equiv(s.first(), ms.first()))
-			return false;
-		}
-	return ms == null;
-
+	return _inner_aseq.equals(obj);
 }
 
 public boolean equals(Object obj){
-	if(this == obj) return true;
-	if(!(obj instanceof Sequential || obj instanceof List))
-		return false;
-	ISeq ms = RT.seq(obj);
-	for(ISeq s = seq(); s != null; s = s.next(), ms = ms.next())
-		{
-		if(ms == null || !Util.equals(s.first(), ms.first()))
-			return false;
-		}
-	return ms == null;
-
+	return _inner_aseq.equals(obj);
 }
 
 public int hashCode(){
-	if(_hash == -1)
-		{
-		int hash = 1;
-		for(ISeq s = seq(); s != null; s = s.next())
-			{
-			hash = 31 * hash + (s.first() == null ? 0 : s.first().hashCode());
-			}
-		this._hash = hash;
-		}
-	return _hash;
+	return _inner_aseq.hashCode();
 }
 
 public int hasheq(){
-	if(_hasheq == -1)
-		{
-//		int hash = 1;
-//		for(ISeq s = seq(); s != null; s = s.next())
-//			{
-//			hash = 31 * hash + Util.hasheq(s.first());
-//			}
-//		this._hasheq = hash;
-		_hasheq  = Murmur3.hashOrdered(this);
-		}
-	return _hasheq;
+	return _inner_aseq.hasheq();
 }
 
 
@@ -112,26 +73,19 @@ public int hasheq(){
 //}
 
 public int count(){
-	int i = 1;
-	for(ISeq s = next(); s != null; s = s.next(), i++)
-		if(s instanceof Counted)
-			return i + s.count();
-	return i;
+	return _inner_aseq.count();
 }
 
 final public ISeq seq(){
-	return this;
+	return _inner_aseq.seq();
 }
 
 public ISeq cons(Object o){
-	return new Cons(o, this);
+	return _inner_aseq.cons(o);
 }
 
 public ISeq more(){
-    ISeq s = next();
-    if(s == null)
-        return PersistentList.EMPTY;
-    return s;
+	return _inner_aseq.more();
 }
 
 //final public ISeq rest(){
@@ -144,119 +98,100 @@ public ISeq more(){
 // java.util.Collection implementation
 
 public Object[] toArray(){
-	return RT.seqToArray(seq());
+	return _inner_aseq.toArray();
 }
 
 public boolean add(Object o){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.add(o);
 }
 
 public boolean remove(Object o){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.remove(o);
 }
 
 public boolean addAll(Collection c){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.addAll(c);
 }
 
 public void clear(){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.clear();
 }
 
 public boolean retainAll(Collection c){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.retainAll(c);
 }
 
 public boolean removeAll(Collection c){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.removeAll(c);
 }
 
 public boolean containsAll(Collection c){
-	for(Object o : c)
-		{
-		if(!contains(o))
-			return false;
-		}
-	return true;
+	return _inner_aseq.containsAll(c);
 }
 
 public Object[] toArray(Object[] a){
-    return RT.seqToPassedArray(seq(), a);
+    return _inner_aseq.toArray(a);
 }
 
 public int size(){
-	return count();
+	return _inner_aseq.size();
 }
 
 public boolean isEmpty(){
-	return seq() == null;
+	return _inner_aseq.isEmpty()
 }
 
 public boolean contains(Object o){
-	for(ISeq s = seq(); s != null; s = s.next())
-		{
-		if(Util.equiv(s.first(), o))
-			return true;
-		}
-	return false;
+	return _inner_aseq.contains(o);
 }
 
 
 public Iterator iterator(){
-	return new SeqIterator(this);
+	return _inner_aseq.iterator();
 }
 
 
 
 //////////// List stuff /////////////////
-private List reify(){
-	return Collections.unmodifiableList(new ArrayList(this));
-}
 
 public List subList(int fromIndex, int toIndex){
-	return reify().subList(fromIndex, toIndex);
+	return _inner_aseq.subList(fromIntex, toIndex);
 }
 
 public Object set(int index, Object element){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.set(index, element);
 }
 
 public Object remove(int index){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.remove(index);
 }
 
 public int indexOf(Object o){
-	ISeq s = seq();
-	for(int i = 0; s != null; s = s.next(), i++)
-		{
-		if(Util.equiv(s.first(), o))
-			return i;
-		}
-	return -1;
+	return _inner_aseq.indexOf(o);
 }
 
 public int lastIndexOf(Object o){
-	return reify().lastIndexOf(o);
+	return _inner_aseq.indexOf(o);
 }
 
 public ListIterator listIterator(){
-	return reify().listIterator();
+	return _inner_aseq.indexOf(o);
 }
 
 public ListIterator listIterator(int index){
-	return reify().listIterator(index);
+	return _inner_aseq.listIterator(index);
 }
 
 public Object get(int index){
-	return RT.nth(this, index);
+	return _inner_aseq.get(index);
 }
 
 public void add(int index, Object element){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.add(index, element);
 }
 
 public boolean addAll(int index, Collection c){
-	throw new UnsupportedOperationException();
+	return _inner_aseq.addAll(index, c);
 }
 
 }
