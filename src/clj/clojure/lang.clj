@@ -331,7 +331,10 @@
 
 (add-protocol-defaults Obj*
   [^IPersistentMap _meta]
-  `(-meta [this#] ~'_meta))
+  `(-meta [this#] ~'_meta))o
+
+(deftype Obj_impl [_meta]
+  :defaults [Obj*])
 
 (wrap-interface java.util.List
   JavaList
@@ -515,3 +518,16 @@
   `(-jlist-add-all!
     [this# i# coll#]
     (throw (UnsupportedOperationException.))))
+
+(deftype ASeq_impl [_hash _hasheq _meta]
+  :defaults [Obj* ASeq*])
+
+(deftype Cons [_first ^ISeq _rest _hash _hasheq _meta]
+  :defaults [Obj* ASeq*]
+  ASeq*
+  (-first [c] _first)
+  (-next [c] (-seq (-rest c)))
+  (-rest [c] (or _rest clojure.lang.PersistentList/EMPTY))
+  (-coll-count [c] (inc (RT/count _rest)))
+  Obj*
+  (-with-meta [c m] (Cons*. _first _rest _hash _hasheq m)))
