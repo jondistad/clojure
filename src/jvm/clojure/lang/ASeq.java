@@ -124,7 +124,7 @@ final public ISeq seq(){
 }
 
 public ISeq cons(Object o){
-	return new Cons(o, this);
+	return new PCons(o, this, -1, -1, null);
 }
 
 public ISeq more(){

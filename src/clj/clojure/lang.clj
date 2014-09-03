@@ -333,9 +333,6 @@
   [^IPersistentMap _meta]
   `(-meta [this#] ~'_meta))
 
-(deftype Obj_impl [_meta]
-  :defaults [Obj*])
-
 (wrap-interface java.util.List
   JavaList
   (^{:tag boolean :on add} -jlist-add! [_ e])
@@ -380,13 +377,14 @@
    ^{:tag int :unsynchronized-mutable true} _hasheq]
   
   `(toString [this#] (RT/printString this#))
+  `(equals
+    [this# o#]
+    (or (identical? this# o#)
+        (-equiv this# o#)))
   `(-empty [this#] clojure.lang.PersistentList/EMPTY)
   `(-equiv
     [this# o#]
     (cond
-     (identical? this# o#)
-     true
-
      (not (or (satisfies? Sequential o#)
               (satisfies? JavaList o#)))
      false
@@ -520,9 +518,6 @@
   `(-jlist-add-all!
     [this# i# coll#]
     (throw (UnsupportedOperationException.))))
-
-(deftype ASeq_impl [_hash _hasheq]
-  :defaults [ASeq*])
 
 (deftype PCons [_first ^ISeq _rest _hash _hasheq _meta]
   :defaults [Obj* ASeq*]

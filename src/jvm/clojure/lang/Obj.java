@@ -30,6 +30,6 @@ final public IPersistentMap meta(){
 	return _meta;
 }
 
-abstract public Obj withMeta(IPersistentMap meta);
+abstract public Obj_STAR_ withMeta(IPersistentMap meta);
 
 }
