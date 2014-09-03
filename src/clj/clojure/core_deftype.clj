@@ -124,21 +124,24 @@
         @pvar))))
 
 (defn- maybe-retag [to from]
-  (if-let [tag (:tag from)]
-    (merge {:tag tag} to)
-    to))
+  (let [tag (or (:tag to) (:tag from))]
+    (assoc-some to :tag tag)))
+
+(defn- vary-resolve-tag [s]
+  (vary-meta s assoc-some :tag (-> s meta :tag resolve-tag)))
 
 (defn- remap-protocol-methodname [maybe-prot mname]
-  (if (var? (resolve maybe-prot))
-    (let [prot (find-prot (resolve maybe-prot) mname)
-          {:keys [sigs method-map]} prot
-          sig (get sigs (keyword (name mname)))]
-      (-> method-map
-          (get (keyword (name mname)) mname)
-          name
-          symbol
-          (with-meta (maybe-retag (meta mname) sig))))
-    mname))
+  (vary-resolve-tag
+   (if (var? (resolve maybe-prot))
+     (let [prot (find-prot (resolve maybe-prot) mname)
+           {:keys [sigs method-map]} prot
+           sig (get sigs (keyword (name mname)))]
+       (-> method-map
+           (get (keyword (name mname)) mname)
+           name
+           symbol
+           (with-meta (maybe-retag (meta mname) sig))))
+     mname)))
 
 (defn- hint-protocol-arglists [maybe-prot mname args]
   (letfn [(dohint [pvar]
@@ -585,7 +588,7 @@
                   (recur (rest ds) invalid)))
               (when (seq invalid)
                 (throw (IllegalArgumentException. (str "Missing default fields: " invalid))))))
-        fields (vec (map #(vary-meta % assoc-some :tag (-> % meta :tag resolve-tag)) fields))
+        fields (vec (map vary-resolve-tag fields))
         dfields (mapcat :default-fields defaults)
         fields (replace (zipmap dfields dfields) fields) ; transfers metadata
         marities (reduce1 (fn [m [name args & body]]
@@ -854,8 +857,7 @@
     (throw (IllegalArgumentException. "Fields must be a vector.")))
   `(do
      (alter-var-root (var ~name) assoc
-                     :default-fields '[~@(map #(vary-meta % assoc-some :tag (-> % meta :tag resolve-tag))
-                                              fields)]
+                     :default-fields '[~@(map vary-resolve-tag fields)]
                      :default-methods [~@methods])
      '~name))
 
