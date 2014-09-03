@@ -517,6 +517,7 @@
                   (recur (rest ds) invalid)))
               (when (seq invalid)
                 (throw (IllegalArgumentException. (str "Missing default fields: " invalid))))))
+        fields (vec (map #(vary-meta % assoc-some :tag (-> % meta :tag resolve-tag)) fields))
         dfields (mapcat :default-fields defaults)
         fields (replace (zipmap dfields dfields) fields) ; transfers metadata
         marities (reduce1 (fn [m [name args & body]]
