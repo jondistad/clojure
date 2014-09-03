@@ -28,7 +28,7 @@ StringSeq(IPersistentMap meta, CharSequence s, int i){
 	this.i = i;
 }
 
-public Obj withMeta(IPersistentMap meta){
+public Obj_STAR_ withMeta(IPersistentMap meta){
 	if(meta == meta())
 		return this;
 	return new StringSeq(meta, s, i);

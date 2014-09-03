@@ -828,7 +828,7 @@ static public class Seq extends ASeq{
 		return cnt;
 	}
 
-	public Obj withMeta(IPersistentMap meta){
+	public Obj_STAR_ withMeta(IPersistentMap meta){
 		return new Seq(meta, stack, asc, cnt);
 	}
 }

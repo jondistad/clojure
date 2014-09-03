@@ -214,7 +214,7 @@ static class Seq extends ASeq{
 		this.ext = ext;
 	}
 
-	public Obj withMeta(IPersistentMap meta){
+	public Obj_STAR_ withMeta(IPersistentMap meta){
 		if(meta != _meta)
 			return new Seq(meta, keys, vals, i, ext);
 		return this;

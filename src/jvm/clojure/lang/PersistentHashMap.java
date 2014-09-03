@@ -554,7 +554,7 @@ final static class ArrayNode implements INode{
 			this.s = s;
 		}
 
-		public Obj withMeta(IPersistentMap meta) {
+		public Obj_STAR_ withMeta(IPersistentMap meta) {
 			return new Seq(meta, nodes, i, s);
 		}
 
@@ -1164,7 +1164,7 @@ static final class NodeSeq extends ASeq {
 		this.s = s;
 	}
 
-	public Obj withMeta(IPersistentMap meta) {
+	public Obj_STAR_ withMeta(IPersistentMap meta) {
 		return new NodeSeq(meta, array, i, s);
 	}
 

@@ -323,7 +323,7 @@ static class Seq extends ASeq implements Counted{
 		return (array.length - i) / 2;
 	}
 
-	public Obj withMeta(IPersistentMap meta){
+	public Obj_STAR_ withMeta(IPersistentMap meta){
 		return new Seq(meta, array, i);
 	}
 }

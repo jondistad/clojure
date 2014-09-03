@@ -1791,8 +1791,8 @@ static public void print(Object x, Writer w) throws IOException{
 //*
 	else {
 		boolean readably = booleanCast(PRINT_READABLY.deref());
-		if(x instanceof Obj) {
-			Obj o = (Obj) x;
+		if(x instanceof Obj_STAR_) {
+			Obj_STAR_ o = (Obj_STAR_) x;
 			if(RT.count(o.meta()) > 0 &&
 			   ((readably && booleanCast(PRINT_META.deref()))
 			    || booleanCast(PRINT_DUP.deref()))) {

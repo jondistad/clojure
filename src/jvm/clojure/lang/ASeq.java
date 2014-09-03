@@ -15,7 +15,7 @@ import java.util.*;
 
 public abstract class ASeq implements ASeq_STAR_ {
 
-final ASeq_STAR_ _inner_aseq;
+final ASeq_impl _inner_aseq;
 
 public String toString(){
 	return _inner_aseq.toString();
@@ -25,8 +25,8 @@ public IPersistentCollection empty(){
 	return _inner_aseq.empty();
 }
 
-protected ASeq(ASeq_STAR_ inner) {
-	this._inner_aseq = inner;
+protected ASeq(IPersistentMap meta) {
+	this._inner_aseq = new ASeq_impl(-1, -1, meta);
 }
 
 

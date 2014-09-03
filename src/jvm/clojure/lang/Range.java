@@ -27,7 +27,7 @@ public Range(IPersistentMap meta, int start, int end){
 	this.n = start;
 }
 
-public Obj withMeta(IPersistentMap meta){
+public Obj_STAR_ withMeta(IPersistentMap meta){
 	if(meta == meta())
 		return this;
 	return new Range(meta(), end, n);

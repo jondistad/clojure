@@ -18,14 +18,18 @@ public abstract class Obj implements Obj_STAR_ {
 
 final Obj_impl _inner_obj;
 
-public Obj(Obj_STAR_ inner){
-	this._inner_obj = inner;
+public Obj(IPersistentMap meta) {
+	this._inner_obj = new Obj_impl(meta);
+}
+
+public Obj() {
+	this._inner_obj = new Obj_impl(null);
 }
 
 final public IPersistentMap meta(){
 	return _inner_obj.meta();
 }
 
-abstract public Obj withMeta(IPersistentMap meta);
+abstract public Obj_STAR_ withMeta(IPersistentMap meta);
 
 }

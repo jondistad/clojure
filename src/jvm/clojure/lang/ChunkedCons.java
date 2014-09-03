@@ -27,7 +27,7 @@ public ChunkedCons(IChunk chunk, ISeq more){
 	this(null,chunk, more);
 }
 
-public Obj withMeta(IPersistentMap meta){
+public Obj_STAR_ withMeta(IPersistentMap meta){
 	if(meta != _meta)
 		return new ChunkedCons(meta, chunk, _more);
 	return this;

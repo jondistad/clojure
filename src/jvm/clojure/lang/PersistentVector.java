@@ -320,7 +320,7 @@ static public final class ChunkedSeq extends ASeq implements IChunkedSeq,Counted
 		return s;
 	}
 
-	public Obj withMeta(IPersistentMap meta){
+	public Obj_STAR_ withMeta(IPersistentMap meta){
 		if(meta == this._meta)
 			return this;
 		return new ChunkedSeq(meta, vec, node, i, offset);

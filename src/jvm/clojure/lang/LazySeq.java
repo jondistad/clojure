@@ -30,7 +30,7 @@ private LazySeq(IPersistentMap meta, ISeq s){
 	this.s = s;
 }
 
-public Obj withMeta(IPersistentMap meta){
+public Obj_STAR_ withMeta(IPersistentMap meta){
 	return new LazySeq(meta, seq());
 }
 

@@ -519,7 +519,7 @@ public static void main(String[] args){
 				return i + 1;
 			}
 
-			public Obj withMeta(IPersistentMap meta){
+			public Obj_STAR_ withMeta(IPersistentMap meta){
 				throw new UnsupportedOperationException();
 
 			}
@@ -556,7 +556,7 @@ public static void main(String[] args){
 				return null;
 			}
 
-			public Obj withMeta(IPersistentMap meta){
+			public Obj_STAR_ withMeta(IPersistentMap meta){
 				throw new UnsupportedOperationException();
 
 			}
@@ -596,7 +596,7 @@ public static void main(String[] args){
 				return null;
 			}
 
-			public Obj withMeta(IPersistentMap meta){
+			public Obj_STAR_ withMeta(IPersistentMap meta){
 				throw new UnsupportedOperationException();
 
 			}

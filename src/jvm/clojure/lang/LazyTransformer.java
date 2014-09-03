@@ -41,7 +41,7 @@ private LazyTransformer(IPersistentMap meta, Object first, LazyTransformer rest)
 	this.rest = rest;
 }
 
-public Obj withMeta(IPersistentMap meta){
+public Obj_STAR_ withMeta(IPersistentMap meta){
 	seq();
 	return new LazyTransformer(meta, first, rest);
 }
