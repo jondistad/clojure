@@ -12,6 +12,14 @@
 
 (declare protocol?)
 
+(defmacro declare-type
+  [t fields]
+  (when (= -1 (.lastIndexOf (name t) "."))
+    (binding [*out* *err*]
+      (println "WARNING:" t "is not a package-qualified class name.")))
+  (let [tagname (symbol (.substring (name t) (inc (.lastIndexOf (name t) ".")) (count (name t))))]
+    `(deftype* ~tagname ~t [~@fields])))
+
 (defn- assoc-some
   ([m k v]
      (if (some? v)

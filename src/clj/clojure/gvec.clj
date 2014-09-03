@@ -33,6 +33,8 @@
   (aget [arr ^int i])
   (aset [arr ^int i val]))
 
+(declare-type clojure.lang.Cons* [x y])
+
 (deftype ArrayChunk [^clojure.core.ArrayManager am arr ^int off ^int end]
   
   clojure.lang.Indexed

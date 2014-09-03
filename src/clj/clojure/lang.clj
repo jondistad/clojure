@@ -373,6 +373,8 @@
   ^java.util.List [aseq]
   (java.util.Collections/unmodifiableList (java.util.ArrayList. aseq)))
 
+(declare-type clojure.lang.Cons* [x y])
+
 (add-protocol-defaults ASeq*
   [^{:tag int :unsynchronized-mutable true} _hash
    ^{:tag int :unsynchronized-mutable true} _hasheq]
@@ -428,7 +430,7 @@
   `(-seq [this#] this#)
   `(^ISeq -conj
     [this# o#]
-    (Cons*. o# this#))
+    (clojure.lang.Cons*. o# this#))
   `(-rest
     [this#]
     (if-let [s# (-next this#)]
