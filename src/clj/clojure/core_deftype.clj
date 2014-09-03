@@ -8,6 +8,16 @@
 
 (in-ns 'clojure.core)
 
+(defn- assoc-some
+  ([m k v]
+     (if (some? v)
+       (assoc m k v)
+       m))
+  ([m k v & kvs]
+     (if (even? (count kvs))
+       (reduce1 (fn [m [k v]] (assoc-some m k v)) m (cons [k v] (partition 2 kvs)))
+       (throw (IllegalArgumentException. "Requires even number of key/value pairs")))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; definterface ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn namespace-munge
@@ -737,16 +747,6 @@
 
 (defn- box-tag [tag]
   (or (prim-to-box tag) tag))
-
-(defn- assoc-some
-  ([m k v]
-     (if (some? v)
-       (assoc m k v)
-       m))
-  ([m k v & kvs]
-     (if (even? (count kvs))
-       (reduce1 (fn [m [k v]] (assoc-some m k v)) m (cons [k v] (partition 2 kvs)))
-       (throw (IllegalArgumentException. "Requires even number of key/value pairs")))))
 
 (defn- parse-protocol-opts+sigs [opts+sigs]
   (loop [opts {} sigs opts+sigs]
