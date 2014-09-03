@@ -614,9 +614,9 @@ static public ISeq cons(Object x, Object coll){
 	if(coll == null)
 		return new PersistentList(x);
 	else if(coll instanceof ISeq)
-		return new Cons(x, (ISeq) coll);
+		return new Cons_STAR_(x, (ISeq) coll);
 	else
-		return new Cons(x, seq(coll));
+		return new Cons_STAR_(x, seq(coll));
 }
 
 static public Object first(Object x){

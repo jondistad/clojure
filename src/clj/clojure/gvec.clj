@@ -81,7 +81,7 @@
     (let [s (.next this)]
       (or s (clojure.lang.PersistentList/EMPTY))))
   (cons [this o]
-    (clojure.lang.Cons. o this))
+    (clojure.lang.Cons*. o this))
   (count [this]
     (loop [i 1
            s (next this)]

@@ -331,7 +331,7 @@
 
 (add-protocol-defaults Obj*
   [^IPersistentMap _meta]
-  `(-meta [this#] ~'_meta))o
+  `(-meta [this#] ~'_meta))
 
 (deftype Obj_impl [_meta]
   :defaults [Obj*])
@@ -426,9 +426,9 @@
           (recur (inc i#) (-next s#)))
         i#)))
   `(-seq [this#] this#)
-  `(-conj
+  `(^ISeq -conj
     [this# o#]
-    (clojure.lang.Cons. o# this#))
+    (Cons*. o# this#))
   `(-rest
     [this#]
     (if-let [s# (-next this#)]
@@ -522,7 +522,7 @@
 (deftype ASeq_impl [_hash _hasheq _meta]
   :defaults [Obj* ASeq*])
 
-(deftype Cons [_first ^ISeq _rest _hash _hasheq _meta]
+(deftype Cons* [_first ^ISeq _rest _hash _hasheq _meta]
   :defaults [Obj* ASeq*]
   ASeq*
   (-first [c] _first)
