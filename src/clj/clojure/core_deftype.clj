@@ -922,8 +922,8 @@
                 (loop [rms rms]
                   (if (seq rms)
                     (let [[mth ret] (first rms)
-                          prot (or (find-prot pvar ret)
-                                (throw (IllegalArgumentException. (str mth " is not a method in " pvar))))
+                          prot (or (find-prot pvar mth)
+                                   (throw (IllegalArgumentException. (str mth " is not a method in " pvar))))
                           kmth (keyword (name mth))
                           al (-> prot :sigs kmth :arglists)]
                       (vector (symbol (kmth (:method-map prot)))
