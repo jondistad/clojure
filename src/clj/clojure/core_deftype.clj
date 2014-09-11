@@ -1004,8 +1004,8 @@
   (let [[opts sigs] (parse-protocol-opts+sigs opts+sigs)]
     (when (contains? opts :wraps-interface)
       (throw (IllegalArgumentException. "Do not pass :wraps-interface directly. Use wrap-interface instead.")))
-    (when (contains? opts :unions)
-      (throw (IllegalArgumentException. "Do not pass :unions directly. Use union-protocols instead.")))
+    (when (some #{:unions :remaps} opts)
+      (throw (IllegalArgumentException. "Do not pass :unions or :remaps directly. Use union-protocols instead.")))
     (emit-protocol name opts sigs)))
 
 (defn extend 
