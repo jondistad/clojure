@@ -521,6 +521,7 @@
 
 (deftype PCons [_first ^ISeq _rest _hash _hasheq _meta]
   :defaults [Obj* ASeq*]
+  :base-type true
   ASeq*
   (-first [c] _first)
   (-next [c] (-seq (-rest c)))
