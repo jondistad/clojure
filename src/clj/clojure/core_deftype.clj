@@ -180,7 +180,7 @@
                                 (cons (remap-protocol-methodname iface name)
                                       (maybe-destructured (hint-protocol-arglists iface name params) body)))
                               meths)))]
-    (when-let [bad-opts (seq (remove #{:no-print :defaults} (keys opts)))]
+    (when-let [bad-opts (seq (remove #{:no-print :defaults :base-type} (keys opts)))]
       (throw (IllegalArgumentException. (apply print-str "Unsupported option(s) -" bad-opts))))
     [interfaces methods opts]))
 
@@ -496,8 +496,7 @@
 (defn- emit-deftype*
   "Do not use this directly - use deftype"
   [tagname name fields interfaces methods]
-  (let [classname (with-meta (symbol (str (namespace-munge *ns*) "." name)) (meta name))
-        interfaces (conj interfaces 'clojure.lang.IType)]
+  (let [classname (with-meta (symbol (str (namespace-munge *ns*) "." name)) (meta name))]
     `(deftype* ~tagname ~classname ~fields 
        :implements ~interfaces 
        ~@methods)))
@@ -603,6 +602,7 @@
                                                     (nnext %))
                                                   dflts))))
                          methods defaults)
+        interfaces (if (:base-type opts) interfaces (conj interfaces 'clojure.lang.IType))
         interfaces (vec (into1 (set interfaces) (map :on defaults)))
         ns-part (namespace-munge *ns*)
         classname (symbol (str ns-part "." gname))
@@ -761,7 +761,7 @@
       [opts sigs])))
 
 (defn- emit-protocol [name opts sigs]
-  (let [{:keys [unions ^Class wraps-interface]} opts
+  (let [{:keys [unions ^Class wraps-interface remaps]} opts
         iname (if wraps-interface
                 (symbol (.getName wraps-interface))
                 (symbol (qualify-classname name)))
@@ -811,7 +811,7 @@
   `(do
      (defonce ~name {})
      ~(when-not wraps-interface
-        `(gen-interface :name ~iname :methods ~meths
+        `(gen-interface :name ~iname :methods ~(into1 meths remaps)
                         :extends [~@(map (comp :on-interface deref) unions)]))
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      ~(when sigs
@@ -920,9 +920,30 @@
     (throw (IllegalArgumentException. "At least two protocols are required for a union.")))
   (doseq [p ps
           :let [pvar (resolve p)]]
-    (when-not (and (var? pvar) (protocol? @pvar))
-      (throw (IllegalArgumentException. (str p " is not a protocol.")))))
-  (emit-protocol pname {:unions (vec (map resolve ps))} nil))
+    (when-not (or (map? p)
+                  (and (var? pvar) (protocol? @pvar)))))
+  (let [remap (fn [prot rms]
+                (doseq [[mth ret] rms]
+                  (when-not (contains? (:sigs prot) (keyword (name mth)))
+                    (throw (IllegalArgumentException. (str mth " is not a method in " (:var prot))))))
+                (for [[mth ret] rms
+                      al (-> prot :sigs (get (keyword (name mth))) :arglists)]
+                  (vector (symbol (get (:method-map prot) (keyword (name mth))))
+                          (vec (map #(or (-> % meta :tag) 'Object) al))
+                          (if (= ret 'this)
+                            (qualify-classname pname)
+                            (or (resolve-tag ret) 'Object)))))
+        remaps (loop [ps ps
+                      remaps []]
+                 (if (seq ps)
+                   (do
+                     (when-not (and (var? (first ps) (protocol? @(first ps))))
+                       (throw (IllegalArgumentException. (str (first ps) " is not a protocol."))))
+                     (if (map? (second ps))
+                       (recur (nnext ps) (into1 remaps (remap @(first ps) (second ps))))
+                       (recur (rest ps) remaps)))
+                   remaps))]
+      (emit-protocol pname {:unions (vec (map resolve ps)) :remaps remaps} nil)))
 
 (defmacro union-protocols
   [pname & ps]
@@ -983,8 +1004,8 @@
   (let [[opts sigs] (parse-protocol-opts+sigs opts+sigs)]
     (when (contains? opts :wraps-interface)
       (throw (IllegalArgumentException. "Do not pass :wraps-interface directly. Use wrap-interface instead.")))
-    (when (contains? opts :unions)
-      (throw (IllegalArgumentException. "Do not pass :unions directly. Use union-protocols instead.")))
+    (when (some #{:unions :remaps} opts)
+      (throw (IllegalArgumentException. "Do not pass :unions or :remaps directly. Use union-protocols instead.")))
     (emit-protocol name opts sigs)))
 
 (defn extend 

@@ -27,7 +27,6 @@ clojure.java.browse-ui
 clojure.string
 clojure.data
 clojure.reflect
-clojure.lang
 "
 
 BUILD_DIR="$PWD/bootstrap"
