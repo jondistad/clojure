@@ -937,10 +937,10 @@
                       remaps []]
                  (if (seq ps)
                    (do
-                     (when-not (and (var? (first ps) (protocol? @(first ps))))
+                     (when-not (and (var? (resolve (first ps)) (protocol? @(resolve (first ps)))))
                        (throw (IllegalArgumentException. (str (first ps) " is not a protocol."))))
                      (if (map? (second ps))
-                       (recur (nnext ps) (into1 remaps (remap @(first ps) (second ps))))
+                       (recur (nnext ps) (into1 remaps (remap @(resolve (first ps)) (second ps))))
                        (recur (rest ps) remaps)))
                    remaps))]
       (emit-protocol pname {:unions (vec (map resolve ps)) :remaps remaps} nil)))
