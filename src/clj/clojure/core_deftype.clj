@@ -918,17 +918,19 @@
   [pname ps]
   (when (< (count ps) 2)
     (throw (IllegalArgumentException. "At least two protocols are required for a union.")))
-  (let [remap (fn [prot rms]
-                (doseq [[mth ret] rms]
-                  (when-not (contains? (:sigs prot) (keyword (name mth)))
-                    (throw (IllegalArgumentException. (str mth " is not a method in " (:var prot))))))
-                (for [[mth ret] rms
-                      al (-> prot :sigs (get (keyword (name mth))) :arglists)]
-                  (vector (symbol (get (:method-map prot) (keyword (name mth))))
-                          (vec (map #(or (-> % meta :tag) 'Object) al))
-                          (if (= ret 'this)
-                            (qualify-classname pname)
-                            (or (resolve-tag ret) 'Object)))))
+  (let [remap (fn [pvar rms]
+                (loop [rms rms]
+                  (if (seq rms)
+                    (let [[mth ret] (first rms)
+                          prot (or (find-prot pvar ret)
+                                (throw (IllegalArgumentException. (str mth " is not a method in " pvar))))
+                          kmth (keyword (name mth))
+                          al (-> prot :sigs kmth :arglists)]
+                      (vector (symbol (kmth (:method-map prot)))
+                              (vec (map #(or (-> % meta :tag) 'Object) al))
+                              (if (= ret 'this)
+                                (qualify-classname pname)
+                                (or (resolve-tag ret) 'Object)))))))
         remaps (loop [ps ps
                       remaps []]
                  (if (seq ps)
@@ -936,7 +938,7 @@
                      (when-not (and (var? (resolve (first ps))) (protocol? @(resolve (first ps))))
                        (throw (IllegalArgumentException. (str (first ps) " is not a protocol."))))
                      (if (map? (second ps))
-                       (recur (nnext ps) (into1 remaps (remap @(resolve (first ps)) (second ps))))
+                       (recur (nnext ps) (into1 remaps (remap (resolve (first ps)) (second ps))))
                        (recur (rest ps) remaps)))
                    remaps))]
       (emit-protocol pname {:unions (vec (map resolve ps)) :remaps remaps} nil)))
