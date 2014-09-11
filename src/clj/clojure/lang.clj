@@ -394,7 +394,7 @@
             ms# (seq o#)]
        (if s#
          (if (or (nil? ms#)
-                 (not (Util/equiv (-first this#) (-first o#))))
+                 (not (Util/equiv (-first s#) (-first ms#))))
            false
            (recur (-next s#) (-next ms#)))
          (nil? ms#)))))
