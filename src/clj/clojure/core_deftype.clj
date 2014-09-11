@@ -918,10 +918,6 @@
   [pname ps]
   (when (< (count ps) 2)
     (throw (IllegalArgumentException. "At least two protocols are required for a union.")))
-  (doseq [p ps
-          :let [pvar (resolve p)]]
-    (when-not (or (map? p)
-                  (and (var? pvar) (protocol? @pvar)))))
   (let [remap (fn [prot rms]
                 (doseq [[mth ret] rms]
                   (when-not (contains? (:sigs prot) (keyword (name mth)))
@@ -937,7 +933,7 @@
                       remaps []]
                  (if (seq ps)
                    (do
-                     (when-not (and (var? (resolve (first ps)) (protocol? @(resolve (first ps)))))
+                     (when-not (and (var? (resolve (first ps))) (protocol? @(resolve (first ps))))
                        (throw (IllegalArgumentException. (str (first ps) " is not a protocol."))))
                      (if (map? (second ps))
                        (recur (nnext ps) (into1 remaps (remap @(resolve (first ps)) (second ps))))
