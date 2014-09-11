@@ -360,7 +360,7 @@
 
 (union-protocols ASeq*
   Obj*
-  ISeq
+  ISeq {-conj ISeq}
   Sequential
   JavaList
   JavaSerializable
@@ -426,7 +426,7 @@
           (recur (inc i#) (-next s#)))
         i#)))
   `(-seq [this#] this#)
-  `(^ISeq -conj
+  `(-conj
     [this# o#]
     (->PCons o# this#))
   `(-rest
