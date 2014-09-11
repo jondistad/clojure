@@ -926,7 +926,7 @@
                                    (throw (IllegalArgumentException. (str mth " is not a method in " pvar))))
                           kmth (keyword (name mth))
                           al (-> prot :sigs kmth :arglists)]
-                      (vector (symbol (kmth (:method-map prot)))
+                      (vector (symbol (name (kmth (:method-map prot))))
                               (vec (map #(or (-> % meta :tag) 'Object) al))
                               (if (= ret 'this)
                                 (qualify-classname pname)
