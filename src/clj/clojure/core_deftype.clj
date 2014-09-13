@@ -817,7 +817,7 @@
      ~(when sigs
         `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
      (alter-var-root (var ~name) merge 
-                     (assoc ~opts 
+                     (assoc ~(dissoc opts :remaps)
                        :sigs '~sigs 
                        :var (var ~name)
                        :unions [~@unions]
@@ -921,13 +921,15 @@
   (let [remap (fn [pvar [mth ret]]
                 (let [prot (or (find-prot pvar mth)
                                (throw (IllegalArgumentException. (str mth " is not a method in " pvar))))
-                      kmth (keyword (name mth))]
-                  (for [al (-> prot :sigs kmth :arglists)]
-                    (vector (-> prot :method-map kmth name symbol)
-                            (vec (map #(or (-> % meta :tag) 'Object) al))
-                            (if (= ret 'this)
+                      kmth (keyword (name mth))
+                      mname (-> prot :method-map kmth name)
+                      rtag (if (= ret 'this)
                               (symbol (qualify-classname pname))
-                              (or (resolve-tag ret) 'Object))))))
+                              (or (resolve-tag ret) 'java.lang.Object))]
+                  (for [al (-> prot :sigs kmth :arglists)]
+                    (vector (symbol (munge mname))
+                            (vec (map #(or (-> % meta :tag) 'java.lang.Object) (rest al)))
+                            rtag))))
         remaps (loop [ps ps
                       remaps []]
                  (if (seq ps)
