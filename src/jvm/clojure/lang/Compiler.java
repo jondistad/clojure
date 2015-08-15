@@ -5177,7 +5177,7 @@ static public class ObjExpr implements Expr{
 		if(c!= null && Modifier.isPublic(c.getModifiers()))
 			{
 			//can't emit derived fn types due to visibility
-			if(LazySeq.class.isAssignableFrom(c))
+			if(ALazySeq.class.isAssignableFrom(c))
 				return Type.getType(ISeq.class);
 			else if(c == Keyword.class)
 				return Type.getType(Keyword.class);
@@ -6643,7 +6643,7 @@ private static Expr analyze(C context, Object form, String name) {
 	//todo symbol macro expansion?
 	try
 		{
-		if(form instanceof LazySeq)
+		if(form instanceof ALazySeq)
 			{
 			form = RT.seq(form);
 			if(form == null)
